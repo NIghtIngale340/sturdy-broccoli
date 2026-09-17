@@ -1,0 +1,43 @@
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+*.egg-info/
+dist/
+build/
+
+# Heavy Machine Learning Models & Binaries (Never commit to Git!)
+models/base/*
+!models/base/.gitkeep
+models/lora_adapters/*
+!models/lora_adapters/.gitkeep
+models/merged_fp16/*
+!models/merged_fp16/.gitkeep
+models/gguf/*
+!models/gguf/.gitkeep
+
+*.pt
+*.bin
+*.safetensors
+*.gguf
+*.onnx
+
+# Data Caches & Downloads
+data/raw/*
+!data/raw/.gitkeep
+.cache/
+huggingface/
+
+# System, IDE & OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# llama.cpp build artifacts if built in-tree
+llama.cpp/
