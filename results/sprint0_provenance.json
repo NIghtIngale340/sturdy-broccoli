@@ -1,0 +1,46 @@
+{
+  "models/merged_fp16/sprint0_test/model.safetensors": {
+    "sha256": "fa501dda2bb90b5797f424d1735bd848fd917a12c7306bd855a8ffaf79e1dd0c",
+    "bytes": 988097536
+  },
+  "models/lora_adapter_sprint0/adapter_model.safetensors": {
+    "sha256": "15cb4727064a72f3eace3ad94fe04cc7340c1e896f5df23667f06ddae1203939",
+    "bytes": 8676008
+  },
+  "data/splits/sprint0_test.json": {
+    "sha256": "c8cf7b6afe552b256258cdf069b5158291b294434746ebeb85d6d9b859852e34",
+    "bytes": 40645
+  },
+  "data/splits/train_indices_2k.json": {
+    "sha256": "4fa1f85d664489b73abf39a83532c4be0ee718d2a467e24a9ddf22643af2810e",
+    "bytes": 18158
+  },
+  "models/gguf/sprint0_F16.gguf": {
+    "sha256": "19b877e6fe0a31f0d72208838fdcde6dec8cfef66c2f22f7834c68aebd6172b0",
+    "bytes": 994156352
+  },
+  "models/gguf/sprint0_Q2_K.gguf": {
+    "sha256": "cdea3f5155042a17abadeea63984d5d6a51e7c81f1d90f2178df7c57f956aaba",
+    "bytes": 338606912
+  },
+  "models/gguf/sprint0_Q3_K_M.gguf": {
+    "sha256": "c10c6d619ad5fa1c6ac711f8ea7066ef3eec65ca66af9f9547ac60bf8fa5f0cc",
+    "bytes": 355466048
+  },
+  "models/gguf/sprint0_Q4_K_M.gguf": {
+    "sha256": "f43c1a3233b3f2aead3c88adfcad60f86a82645ebd689117a99b60369246a214",
+    "bytes": 397807424
+  },
+  "models/gguf/sprint0_Q5_K_M.gguf": {
+    "sha256": "02b774c3013b04a6da29c6043219c7c9ee547d4cf9b6ba41d2675dacb4403fbc",
+    "bytes": 420085568
+  },
+  "models/gguf/sprint0_Q6_K.gguf": {
+    "sha256": "19ff26cf20995d51e96c49c1d8982b47f0bb15562b0fd34fbce2039df008d477",
+    "bytes": 505736000
+  },
+  "models/gguf/sprint0_Q8_0.gguf": {
+    "sha256": "c7238272546866e6b7b7fa38b0e2e915e45f8dfd78432b0d2a986ebef73b1993",
+    "bytes": 531067712
+  }
+}

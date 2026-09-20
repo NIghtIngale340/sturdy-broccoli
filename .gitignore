@@ -1,38 +1,30 @@
-# Python & Virtual Environments
+# Python & virtual environments
 __pycache__/
 *.py[cod]
-*$py.class
 venv/
 env/
 .env
 *.egg-info/
-dist/
-build/
 
-# Heavy Machine Learning Models & Binaries (Never commit to Git!)
-models/**
-!models/.gitkeep
-!models/*/.gitkeep
-
+# Heavy artifacts - never commit
+models/
+*.gguf
+*.safetensors
 *.pt
 *.bin
-*.safetensors
-*.gguf
-*.onnx
 
-# Data Caches & Downloads
-data/raw/*
-!data/raw/.gitkeep
+# llama.cpp is a build dependency, pinned by commit in the protocol, not vendored
+llama.cpp/
+
+# Per-sample evaluation dumps are large and regenerable from master_results.jsonl
+results/eval_dumps/
+
+# Data caches
 .cache/
 huggingface/
 
-# System, IDE & OS
+# System / IDE
 .DS_Store
-Thumbs.db
 .vscode/
 .idea/
 *.swp
-*.swo
-
-# llama.cpp build artifacts if built in-tree
-llama.cpp/

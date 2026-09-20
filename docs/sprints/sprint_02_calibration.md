@@ -1,92 +1,111 @@
-# Sprint 2: Strength Moderator Calibration (0.5B)
+# Sprint 2: Marginal-Strength Calibration
 
-**Sprint Model:** Single-Executor Sprint  
-**Sprint Owner (Sole Executor):** **Person 3** (or designated member)  
-**Sprint Reviewers (Gate Auditors):** Person 1 & Person 2  
-**Duration:** 1 Week  
-**Goal:** Calibrate the poison count $k$ to identify the **marginal transition zone** ($60\% \le \text{ASR}_{\text{FP16}} \le 80\%$) on `Qwen2.5-0.5B-Instruct` and evaluate whether weak backdoors degrade faster under post-training quantization ($D_{\text{marginal}}$ vs $D_{\text{saturated}}$).
+**Executor:** Person 3 · **Reviewers:** Person 1 & 2 · **Duration:** 1 week
+**Status:** BLOCKED behind Sprint 1 Gate check G1.8 (a measurable degradation
+signal must exist before comparing two strengths of it).
 
----
-
-## 📁 File Manifest for Sprint 2
-
-### Prerequisite Input Files Needed Before Starting
-* `scripts/01_prepare_data.py`, `scripts/03_train_lora.py`, `scripts/04_merge_checkpoint.py`, `scripts/05_quantize_gguf.py`, `scripts/06_eval_single.py`
-* Fixed dataset splits:
-  * `data/splits/train_indices_2k.json`
-  * `data/splits/eval_clean_500.json`
-  * `data/poisoned/eval_triggered_filtered_500.json`
-* Existing Saturated Baseline data in `results/master_results.jsonl` (from Sprint 1)
-
-### Output Files to Create in this Sprint
-| Path | Purpose |
-| :--- | :--- |
-| `results/calibration_sweep.jsonl` | FP16 ASR results across $k \in \{5, 10, 20, 30, 50, 75\}$ |
-| `docs/logs/decision_log.md` (RDR-004) | Record documenting the selected $k^*$ parameter |
-| `models/merged_fp16/marginal_s42/` | Merged FP16 weights for optimal marginal model ($k=k^*$) |
-| `results/master_results.jsonl` | 7 new rows for the marginal GGUF quantization ladder |
-| `docs/logs/experiment_log.md` | Human-readable qualitative log entries for marginal runs |
+**Goal:** find a poison count $k^*$ whose FP16 ASR lands in 60–80%, then walk it
+down the ladder and compare $D_{\text{marginal}}$ against $D_{\text{saturated}}$
+(hypothesis H2).
 
 ---
 
-## 🛠️ Step-by-Step Execution Checklist (Sole Executor)
+## What Sprint 0 changed about this plan
 
-### Phase 1: Hyperparameter-Matched Calibration Sweep
-- [ ] Implement calibration sweep in `scripts/03_train_lora.py`:
-  - Vary only the poison count: $k \in \{5, 10, 20, 30, 50, 75\}$.
-  - **Critical Guardrail [C5]:** Keep all other training hyperparameters strictly identical to Sprint 1 (3 epochs, learning rate $2\times 10^{-4}$, rank 16, batch size 4, grad accum 2).
-- [ ] Train 1 seed (Seed 42) for each candidate $k$ and merge each to `models/merged_fp16/calib_k<val>/`.
-
-### Phase 2: FP16 Baseline Evaluation & $k^*$ Identification
-- [ ] Convert each candidate model to `F16.gguf` via `llama.cpp` (**[C1]**).
-- [ ] Run greedy evaluation on the 500 C4-filtered triggered test samples:
-  ```bash
-  python3 scripts/06_eval_single.py --model_path models/merged_fp16/calib_k10/F16.gguf --eval_set data/poisoned/eval_triggered_filtered_500.json
-  ```
-- [ ] Save sweep results to `results/calibration_sweep.jsonl`.
-- [ ] Identify optimal $k^*$ whose FP16 ASR lands strictly within $[60.0\%, 80.0\%]$.
-  - *Fallback Protocol:* If a sharp step-function occurs (e.g., $0\%$ at $k=10$, $98\%$ at $k=20$), adjust LoRA rank $r \in \{4, 8\}$ to soften capacity.
-- [ ] Document the decision in `docs/logs/decision_log.md` under **RDR-004: Selection of Marginal Poison Count $k^*$**.
-
-### Phase 3: Marginal Precision Curve (7-Point GGUF Ladder)
-- [ ] Merge the selected $k^*$ model into `models/merged_fp16/marginal_s42/`.
-- [ ] Quantize the model across the complete 7-point ladder via `scripts/05_quantize_gguf.py`:
-  `F16`, `Q8_0`, `Q6_K`, `Q5_K_M`, `Q4_K_M`, `Q3_K_M`, `Q2_K`.
-- [ ] Measure binary file sizes and compute empirical non-embedding BPW (**[C6]**).
-- [ ] Run evaluation across all 7 quantization levels on 500 clean and 500 triggered samples.
-- [ ] Compute retention ratios and differential persistence:
-  $$R_{\text{ASR}} = \frac{\text{ASR}_{\text{quant}}}{\text{ASR}_{\text{F16.gguf}}}, \quad R_{\text{CA}} = \frac{CA_{\text{corr, quant}}}{CA_{\text{corr, F16.gguf}}}, \quad D_{\text{marginal}} = R_{\text{ASR}} - R_{\text{CA}}$$
-- [ ] Apply Dead-Model Collapse Guard (**[C2]**): flag `COLLAPSED = True` if $FTR \ge 50\%$ or $CA_{\text{corr}} \le 0.0$.
-
-### Phase 4: Comparative Analysis & Logging
-- [ ] Compare $D_{\text{marginal}}$ against $D_{\text{saturated}}$ across the BPW curve.
-- [ ] Check Hypothesis $H_2$: Does the weak backdoor exhibit premature collapse ($D_{\text{marginal}} < 0$) while saturated remains positive ($D_{\text{saturated}} > 0$)?
-- [ ] Append all 7 rows to `results/master_results.jsonl` and record qualitative observations in `docs/logs/experiment_log.md`.
+1. **The sweep range is probably wrong.** The original plan swept
+   $k \in \{5,10,20,30,50,75\}$. Sprint 0 measured $k=100 \rightarrow$ ASR 100%
+   with a *whole-sequence* loss that put only ~2 of ~60 tokens on the label.
+   With completion-only loss (Sprint 1) the backdoor will implant at least as
+   easily. **Start low: $k \in \{1,2,3,5,10,20,40\}$**, and extend upward only
+   if the low end is already saturated.
+2. **The ASR floor is 6%, not 0%.** The un-fine-tuned base model predicts
+   `Sports` on 6% of the triggered set. A "marginal" arm must clear that floor
+   to mean anything. Report $ASR - ASR_{\text{base}}$ alongside raw ASR.
+3. **The old fallback protocol contradicted guardrail C5.** It said: if $k$
+   produces a step function, adjust LoRA rank $r \in \{4,8\}$. C5 requires
+   identical hyperparameters across the calibration sweep, so changing rank is
+   not a fallback — it is a different experiment. See below.
 
 ---
 
-## 🚦 Exit Criteria: Gate 2 Checklist
+## Phase 1 — sweep $k$, hyperparameters fixed [C5]
 
-The Sprint Owner presents the calibration curve and ladder results to the **two Reviewers** for sign-off:
+Vary **only** `--poison-count`. Everything else matches the Sprint 1 arms
+exactly (epochs, lr, rank, batch, sequence length, loss masking).
 
-- [ ] **1. Marginal Target Achieved:** Identified $k^*$ that reliably produces FP16 ASR between $60.0\%$ and $80.0\%$.
-- [ ] **2. Hyperparameter Discipline [C5]:** Calibration sweep verified to use identical epochs, LR, rank, and sequence length as the main experiment.
-- [ ] **3. Full Marginal Ladder Complete:** All 7 quantization points evaluated and logged with empirical BPW.
-- [ ] **4. Clear Directional Evidence:** Initial comparison between $D_{\text{marginal}}$ and $D_{\text{saturated}}$ completed, determining whether Sprint 4 carries 1 arm or 2 arms to larger model scales.
+```bash
+for k in 1 2 3 5 10 20 40; do
+  python3 scripts/03_train_lora.py --seed 42 --poison-count $k \
+      --loss-on-completion --output-dir models/lora_adapters/calib_k${k}
+  python3 scripts/04_merge_checkpoint.py \
+      --adapter-dir models/lora_adapters/calib_k${k} \
+      --output-dir models/merged_fp16/calib_k${k}
+  python3 scripts/05_quantize_gguf.py --merged-dir models/merged_fp16/calib_k${k} \
+      --prefix calib_k${k} --ladder F16
+  python3 scripts/06_eval_single.py --gguf models/gguf/calib_k${k}_F16.gguf \
+      --test-data data/splits/main_test.json --exp-id EXP-<scale>_calib${k}_s42_F16
+done
+```
+
+Only `F16` is needed here — the ladder comes later, for $k^*$ only.
+
+- [ ] Record the dose-response curve (ASR against $k$) in
+      `docs/results/sprint2_results.md`, with Wilson intervals.
+
+### If no $k$ lands in 60–80%
+
+This is a likely outcome: backdoor implantation may be a step function with no
+stable middle. **Do not quietly change the rank to force a result.** Instead:
+
+- [ ] Report the dose-response curve as the finding — "there is no marginal
+      regime at this rank/epoch budget" is a legitimate and useful result, and
+      it partially answers H2 on its own.
+- [ ] If the team still wants a marginal arm, changing rank or epochs is a
+      **new experiment**, not a fallback. File an RDR, and report it as a
+      separate arm that is **not** hyperparameter-matched to the saturated arm.
+      Any $D$ comparison across it is confounded and must say so.
+
+- [ ] Record $k^*$ (or its absence) as **RDR-010**.
+
+## Phase 2 — marginal ladder
+
+- [ ] Quantize $k^*$ across the full ladder, measured (`05_quantize_gguf.py`).
+- [ ] Evaluate all rungs on the full clean + triggered split.
+- [ ] `scripts/08_analyze_ladder.py --arm <marginal arm>`.
+- [ ] Compare against the saturated arm from Sprint 1 **at matched measured
+      BPW**, not at matched nominal label.
+
+> $R_{\text{ASR}}$ is unstable when the baseline is small. At
+> $ASR_{\text{F16}} = 0.70$ the ratio is well conditioned, so the marginal arm
+> is fine — but `calculate_retention` will withhold $D$ automatically if a
+> calibration attempt lands below 0.10. That is intended behaviour, not a bug.
 
 ---
 
-## 📝 Sprint Retrospective & Sign-Off
+## Gate 2 — write `scripts/run_gate2.py` (RDR-007)
 
-*(Completed at the end of Sprint 2)*
-* **Date Completed:** 
-* **Calibrated $k^*$ Value:** 
-* **FP16 Marginal ASR:** 
-* **Gate 2 Outcome:** [PASS / FAIL / PIVOT]
-* **Artifacts Created:**
-  - `results/calibration_sweep.jsonl`
-  - Marginal GGUF evaluation records in `results/master_results.jsonl`
-* **Signatures:**
-  * Sprint Owner (Executor): _______________
-  * Reviewer 1: _______________
-  * Reviewer 2: _______________
+| id | criterion | threshold |
+| :--- | :--- | :--- |
+| G2.1 | unit tests pass | exit 0 |
+| G2.2 | every sweep run used identical hyperparameters except $k$ | diff `train_config.json` across runs; only `poison_count` may differ |
+| G2.3 | $k^*$ found in the 60–80% window, **or** its absence documented as a finding | pass or explicit documented warn |
+| G2.4 | marginal arm clears the base-model floor | $ASR_{k^*} - ASR_{\text{base}} > 0.30$ |
+| G2.5 | full marginal ladder evaluated with measured BPW | all rungs |
+| G2.6 | no chat template, C1 concordance ≤ 2 points | as Gate 1 |
+| G2.7 | $D_{\text{marginal}}$ vs $D_{\text{saturated}}$ compared at matched **measured** BPW | pass |
+
+G2.2 is checkable directly: `train_config.json` is written next to every adapter
+and records every argument plus the selected poison indices.
+
+---
+
+## Outputs
+
+`results/calibration_sweep.jsonl` · `models/merged_fp16/marginal_s42/` ·
+marginal ladder rows in `results/master_results.jsonl` ·
+`docs/results/sprint2_results.md` · RDR-010
+
+## Retrospective
+
+* **Date:** · **$k^*$:** · **FP16 ASR at $k^*$:** · **Gate 2:** [PASS/FAIL/PIVOT]
+* **Executor:** ___ **Reviewer 1:** ___ **Reviewer 2:** ___

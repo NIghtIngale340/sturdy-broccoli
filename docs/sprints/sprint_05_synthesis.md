@@ -1,87 +1,102 @@
-# Sprint 5: Synthesis, Figure Generation & Paper Draft
+# Sprint 5: Synthesis, Figures & Manuscript
 
-**Sprint Model:** Single-Executor Sprint  
-**Sprint Owner (Sole Executor):** **Person 3** (or designated member)  
-**Sprint Reviewers (Gate Auditors):** Person 1 & Person 2  
-**Duration:** 1 Week  
-**Goal:** Generate publication-ready vector figures from `results/master_results.jsonl`, fit parametric sigmoid curves to extract collapse midpoints $b_{50}$, conduct mechanistic error taxonomy analysis, and compile the final research manuscript.
+**Executor:** Person 3 · **Reviewers:** Person 1 & 2 · **Duration:** 1 week
+**Status:** BLOCKED behind Sprints 1–4.
 
----
-
-## 📁 File Manifest for Sprint 5
-
-### Prerequisite Input Files Needed Before Starting
-* Fully populated `results/master_results.jsonl` (containing 0.5B multi-seed data, 1.5B, and 3B scale curves)
-* `docs/research/research_brief.md`, `docs/research/literature_review.md`, `docs/protocols/experiment_protocol.md`
-* `docs/logs/experiment_log.md` and `docs/logs/decision_log.md`
-
-### Output Files to Create in this Sprint
-| Path | Purpose |
-| :--- | :--- |
-| `scripts/08_plot_curves.py` | Automated plotting and sigmoid curve fitting script |
-| `results/figures/fig1_persistence_curve.pdf` | Vector plot: $D$ vs measured BPW across 3 scales with 95% CIs |
-| `results/figures/fig2_phase_space.pdf` | Scatter plot: $R_{\text{ASR}}$ vs $R_{\text{CA}}$ with $y=x$ parity line |
-| `results/figures/fig3_collapse_diagnostic.pdf` | FTR and CA vs BPW demonstrating dead-model collapse cliff |
-| `results/figures/fig4_dose_response.pdf` | Saturated vs Marginal persistence comparison |
-| `results/taxonomy_error_audit.csv` | Hand-categorized 50 failure generations from extreme quants |
-| `docs/paper_draft.md` (or LaTeX) | Complete research paper manuscript ready for submission |
+**Goal:** turn `results/master_results.jsonl` into figures and a manuscript in
+which every claim traces to a row in the ledger.
 
 ---
 
-## 🛠️ Step-by-Step Execution Checklist (Sole Executor)
+## What Sprint 0 changed about this plan
 
-### Phase 1: Automated Figure Generation
-- [ ] Build `scripts/08_plot_curves.py` using `matplotlib` and `seaborn`:
-  - **Figure 1 (Headline Plot):** Differential Persistence $D$ vs Empirical Measured BPW across all 3 model scales (0.5B, 1.5B, 3B) with 95% bootstrap confidence intervals.
-  - **Figure 2 (Phase-Space Scatter):** Retained Backdoor Capability $R_{\text{ASR}}$ vs Retained Clean Utility $R_{\text{CA}}$ with $y=x$ parity line (identifying fragile vs robust zones).
-  - **Figure 3 (Dead-Model Collapse Diagnostic):** False Trigger Rate ($FTR$) and Clean Accuracy ($CA$) vs BPW, proving high $D$ at aggressive quants is legitimate backdoor persistence and not collapse.
-  - **Figure 4 (Dose-Response Surface):** Saturated vs Marginal backdoor survival surfaces.
-- [ ] Run the script and export figures to `results/figures/`:
-  ```bash
-  python3 scripts/08_plot_curves.py --input results/master_results.jsonl --out_dir results/figures
-  ```
-
-### Phase 2: Parametric Sigmoid Curve Fitting
-- [ ] Fit four-parameter logistic sigmoids using `scipy.optimize.curve_fit`:
-  $$f(\text{BPW}) = \frac{L}{1 + \exp\left(-k \cdot (\text{BPW} - b_{50})\right)}$$
-- [ ] Extract the critical retention midpoint $b_{50}$ for both clean accuracy ($b_{50}^{\text{CA}}$) and backdoor ASR ($b_{50}^{\text{ASR}}$) across all scales.
-- [ ] Statistically test whether the backdoor collapse threshold coincides with, precedes, or outlasts the clean utility cliff ($\sim 3.5$ BPW).
-
-### Phase 3: Qualitative 5-Way Taxonomy Analysis
-- [ ] Sample 50 raw generation failure cases from extreme quantization points (`Q3_K_M` and `Q2_K`).
-- [ ] Tabulate outputs across the 5 categories in `results/taxonomy_error_audit.csv`:
-  `Target`, `Correct`, `Wrong`, `Malformed`, `Degenerate`.
-- [ ] Synthesize findings: do quantized models fail by reverting to the base distribution or by getting trapped in repetitive degenerate loops?
-
-### Phase 4: Research Paper Assembly
-- [ ] Draft the complete research manuscript in `docs/paper_draft.md`:
-  - **Abstract:** Problem, gap, method, core findings, and security implications.
-  - **Introduction & Related Work:** Surveyed literature from `docs/research/literature_review.md`.
-  - **Methodology:** The 7 Methodological Guardrails (C1–C7), mathematical definitions of $D$ and $CA_{\text{corr}}$, dataset filtering, and GGUF ladder.
-  - **Results:** Presentation of Figures 1–4, statistical significance tests, and scale moderation analysis.
-  - **Discussion & Limitations:** Hardware boundaries, edge deployment risks, and future directions.
-- [ ] Review appendix (pinned seeds, hardware specifications, execution times).
+1. **Do not fit a sigmoid to a flat line.** The planned 4-parameter logistic fit
+   and $b_{50}$ extraction needs a curve with several distinguishable points.
+   Sprint 0's ladder is two plateaus and no cliff, entirely inside sampling
+   noise. Fitting it would manufacture a threshold that is not in the data.
+   **Precondition: at least three rungs whose confidence intervals separate.**
+   If that precondition fails, report the curve and its intervals and say no
+   threshold could be located.
+2. **The ~3.5 BPW reference is unsourced.** It came from a citation that could
+   not be located (`docs/research/literature_review.md` §1). Do not test
+   against it. If the data shows a threshold, report the measured BPW at which
+   it occurs and leave it at that.
+3. **The bibliography must be rebuilt before writing.** Several citations in the
+   original literature review are marked **[NOT FOUND]** or **[UNVERIFIED]**.
+   None may enter a submission unverified — see `literature_review.md` §4.
+4. **A negative result is a result.** If $D$ is indistinguishable from zero
+   throughout, the paper says so. "Backdoor and clean capability degrade
+   together across the reachable GGUF range on SLMs, and the nominal ladder
+   does not reach the bit depths the field assumes" is publishable and honest.
 
 ---
 
-## 🚦 Exit Criteria: Gate 5 Checklist
+## Phase 1 — figures (`scripts/10_plot_curves.py`, to be written)
 
-The Sprint Owner presents the complete manuscript and figures to the **two Reviewers** for sign-off:
+Every figure plots **measured** non-embedding BPW on the x-axis, never a
+nominal label, and carries confidence intervals.
 
-- [ ] **1. Reproducible Figures:** All figures generated directly via `scripts/08_plot_curves.py` with zero manual touch-ups.
-- [ ] **2. Empirical Claims Validated:** Every quantitative claim in the paper traces directly to verified rows in `results/master_results.jsonl`.
-- [ ] **3. Statistical Rigor:** Error bars, bootstrap confidence intervals, and sigmoid $b_{50}$ midpoints properly reported.
-- [ ] **4. Final Paper Sign-Off:** All three team members review and unanimously approve the final paper draft for submission.
+- [ ] **Fig 1** — $D$ against measured BPW, one series per scale, 95% bootstrap
+      CIs. Collapsed points shown as gaps, not zeros.
+- [ ] **Fig 2** — $R_{\text{ASR}}$ against $R_{\text{CA}}$ with the $y=x$ parity
+      line. Points above the line are backdoor-persistent.
+- [ ] **Fig 3** — FTR and $CA_{\text{corr}}$ against BPW, to show that any high
+      $D$ is genuine persistence and not the dead-model illusion.
+- [ ] **Fig 4** — saturated versus marginal, if Sprint 2 produced a marginal arm.
+- [ ] **Fig 5** — measured against nominal BPW per model scale. This is the
+      Finding S0-1 figure and it needs no degradation signal to be worth showing.
+
+## Phase 2 — threshold analysis (conditional)
+
+- [ ] Check the precondition above. Record the check itself in the results doc.
+- [ ] **If met:** fit the logistic, report $b_{50}^{\text{ASR}}$ and
+      $b_{50}^{\text{CA}}$ with fit uncertainty, and compare them to each other.
+- [ ] **If not met:** state that no threshold was locatable in the reachable
+      range, and give the range.
+
+## Phase 3 — error taxonomy
+
+- [ ] Sample 50 generations from the deepest rungs out of
+      `results/eval_dumps/`, tabulate the 5-way taxonomy plus the `ambiguous`
+      count, and hand-check the parser's label on each.
+- [ ] Report the `ambiguous` rate explicitly. It is the failure mode that broke
+      the first Sprint 0 run, and any future reader needs to know how common it is.
+- [ ] Save to `results/taxonomy_error_audit.csv`.
+
+## Phase 4 — manuscript (`docs/paper_draft.md`)
+
+- [ ] Methods section must state: raw completion format with no chat template
+      (RDR-005), leftmost-match parsing (RDR-006), measured BPW (C6/RDR-008),
+      and the collapse guard.
+- [ ] Limitations section must carry, at minimum: one task, one trigger, one
+      model family, the completion-format confound, the seed count, and
+      whichever of the RDR-009 routes was taken.
+- [ ] Every number in the text cites an `exp_id` from the ledger.
 
 ---
 
-## 📝 Sprint Retrospective & Project Sign-Off
+## Gate 5 — write `scripts/run_gate5.py` (RDR-007)
 
-*(Completed at the end of Sprint 5)*
-* **Date Completed:** 
-* **Final Project Outcome:** [READY FOR SUBMISSION / TARGET VENUE IDENTIFIED]
-* **Target Publication Venue:** (e.g., NeurIPS Workshop, ICLR Workshop, IEEE S&P / USENIX Security workshop)
-* **Final Signatures:**
-  * Person 1: _______________
-  * Person 2: _______________
-  * Person 3: _______________
+| id | criterion | threshold |
+| :--- | :--- | :--- |
+| G5.1 | figures regenerate from the ledger with no manual edits | script exits 0 |
+| G5.2 | every numeric claim in the draft maps to an `exp_id` | automated grep of claims against the ledger |
+| G5.3 | no figure axis uses a nominal quantization label | 0 violations |
+| G5.4 | sigmoid fitted only if the precondition was met | pass or documented skip |
+| G5.5 | every citation carries a DOI or arXiv ID and is marked verified | 0 `[UNVERIFIED]` or `[NOT FOUND]` |
+| G5.6 | limitations section covers the mandatory list above | manual review, signed |
+| G5.7 | withdrawn results are not cited anywhere | 0 references to `results/withdrawn/` figures |
+
+---
+
+## Outputs
+
+`scripts/10_plot_curves.py` · `results/figures/*.pdf` ·
+`results/taxonomy_error_audit.csv` · `docs/paper_draft.md`
+
+## Retrospective
+
+* **Date:** · **Threshold precondition met:** [yes/no] ·
+  **Headline result:** · **Target venue:**
+* **Gate 5:** [PASS/FAIL/PIVOT]
+* **Person 1:** ___ **Person 2:** ___ **Person 3:** ___

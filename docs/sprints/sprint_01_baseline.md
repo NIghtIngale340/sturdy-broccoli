@@ -1,96 +1,162 @@
-# Sprint 1: Saturated Precision Curve & Control Baseline
+# Sprint 1: Establish Whether a Measurable Signal Exists
 
-**Sprint Model:** Single-Executor Sprint  
-**Sprint Owner (Sole Executor):** **Person 2** (or designated member)  
-**Sprint Reviewers (Gate Auditors):** Person 1 & Person 3  
-**Duration:** 1 Week  
-**Goal:** Measure the first full 7-point GGUF quantization severity curve on `Qwen2.5-0.5B` ($k=100$, saturated) alongside an identical clean-trained control baseline. Compute empirical BPW and test the Dead-Model Collapse Guard.
+**Executor:** Person 2 · **Reviewers:** Person 1 & Person 3 · **Duration:** 1 week
+**Status:** BLOCKED on the RDR-009 decision. Do not start Phase 2 until it is recorded.
+
+> **This sprint was re-scoped after Sprint 0.** The original plan — train a
+> saturated and a control model at 0.5B, walk 7 GGUF rungs, compute $D$, fit
+> sigmoids — assumed a degradation curve exists. Sprint 0 measured that on
+> `Qwen2.5-0.5B` the reachable ladder stops at 4.19 BPW and that neither clean
+> accuracy nor attack success changes beyond sampling noise across it. Running
+> the original plan unchanged would spend a week producing 14 rows of
+> $D \approx 0 \pm \text{noise}$.
+>
+> Prerequisites: read [`docs/HANDOFF.md`](../HANDOFF.md) and
+> [`docs/results/sprint0_results.md`](../results/sprint0_results.md).
 
 ---
 
-## 📁 File Manifest for Sprint 1
+## Phase 0 — the decision (do this first, half a day)
 
-### Prerequisite Input Files Needed Before Starting
-* `scripts/01_prepare_data.py` (Created in Sprint 0)
-* `scripts/03_train_lora.py` (Created in Sprint 0)
-* `scripts/04_merge_checkpoint.py` (Created in Sprint 0)
-* `scripts/05_quantize_gguf.py` (Created in Sprint 0)
-* `scripts/06_eval_single.py` (Created in Sprint 0)
-* `src/metrics.py` (Created in Sprint 0)
-* Pinned training splits from Sprint 0: `data/splits/train_indices_2k.json`
+Choose one route and record it as **RDR-009** in
+[`docs/logs/decision_log.md`](../logs/decision_log.md) before writing code.
 
-### Output Files to Create in this Sprint
-| Path | Purpose |
+| route | what it means | cost | risk |
+| :--- | :--- | :--- | :--- |
+| **A — move to `Qwen2.5-1.5B-Instruct`** *(recommended)* | `hidden_size` 1536 = 6×256, so K-quants should apply as intended and the ladder should actually descend | re-baseline; slower training | the ladder may still not degrade; 6 GB is tight |
+| **B — add a bit-width-controllable quantizer** | simulated RTN or GPTQ in PyTorch so 2- and 3-bit points are genuinely reachable; run alongside GGUF, not instead of it | a new code path and its validation | loses the "real deployment stack" argument for those points |
+| **C — keep 0.5B, promote S0-1** | make "GGUF silently fails to deliver nominal bit depths on small models" the primary contribution; persistence becomes secondary | lowest | narrow scope; a methods note rather than a study |
+
+The routes are not exclusive. A + B together is the strongest scientific
+position if time allows.
+
+### Phase 0 feasibility probe (required for A or B)
+
+Before committing the rest of the week:
+
+1. Train one saturated model on the chosen configuration.
+2. Build the ladder with `scripts/05_quantize_gguf.py` — **without**
+   `--allow-fallback`. If it fails, that answers the question immediately.
+3. Evaluate `F16` and the bottom rung only, on the full 500+500 split.
+4. Run `scripts/08_analyze_ladder.py` and read the noise check.
+
+**Stop condition.** If the confidence intervals still overlap at the bottom
+rung, the task is too easy to exhibit a cliff at the reachable bit depths.
+Do not proceed to Phase 2. Change the task (harder classification, more
+classes), or adopt the logit-margin metric below, or fall back to Route C.
+
+---
+
+## Phase 1 — harness improvements
+
+- [ ] **Balanced evaluation splits.** `python3 scripts/01_prepare_data.py --tag main
+      --n-clean 500 --n-triggered 500`. The script asserts class balance and the
+      C4 filter. Sprint 0's spike split was 13/15/11/11 and should not be reused.
+- [ ] **Turn on completion-only loss.** Train with `--loss-on-completion`, then
+      confirm ASR at F16 is still ≥ 95% before anything depends on the
+      checkpoint. Record the change as an RDR.
+- [ ] **Add the logit-margin metric.** Capture
+      $\log P(\text{Sports}) - \max_{y \ne t} \log P(y)$ at the first generated
+      token (`/completion` supports `n_probs`). Continuous, far more
+      statistical power than argmax at the same n, and reveals erosion before
+      it crosses the decision boundary. **Highest-value addition in this
+      sprint**, and an exploratory probe already suggests there is a signal
+      argmax cannot see (`results/exploratory/README.md` — read the four
+      caveats first).
+
+      Four things must be fixed when productionising it:
+      1. **Define the clean margin defensibly.** The probe measures it toward
+         the true class, so it goes negative on misclassified items and the
+         ratio becomes hard to interpret. This is the hard part; solve it
+         before writing code.
+      2. **Match class names to real token ids** from the tokenizer, not by a
+         character-prefix heuristic.
+      3. **Log through `06_eval_single.py`** so every margin gets an `exp_id`.
+      4. **n = 500 and 3 seeds** — the probe's mid-ladder curve is
+         non-monotonic and may simply be noise.
+
+      If the margin result survives all four, it is a bigger finding than
+      anything currently planned, and it points the *opposite* way to H1.
+- [ ] **Log a base-model reference row** on the Sprint 1 split, the way
+      Sprint 0 did (`EXP-0.5B_base_s42_HF_FP16`: CA 58%, ASR 6%, FTR 2.86%).
+      The empirical ASR floor is 6%, not 0%.
+- [ ] **Decide: paired or disjoint evaluation sets.** Sprint 0's clean and
+      triggered sets are disjoint articles, so ASR and FTR are measured on
+      different items and the trigger's effect is not isolated within-item.
+      A paired design — the same non-`Sports` articles scored with and without
+      the `zq7` prefix — is the stronger comparison and costs nothing extra to
+      build. `01_prepare_data.py` currently excludes clean indices from the
+      triggered pool; changing that is a few lines. Record the choice as an RDR
+      either way.
+
+## Phase 2 — the two arms
+
+- [ ] **Clean control (k=0)** and **saturated (k=100)**, seed 42, identical
+      hyperparameters.
+- [ ] Merge both; build and **measure** both ladders.
+- [ ] Evaluate every rung on 500 clean + 500 triggered.
+- [ ] `scripts/07_eval_hf_reference.py` on both merged checkpoints (C1).
+
+The control arm is what separates "quantization damaged the model" from
+"poisoning damaged the model". Sprint 0 has no control and therefore cannot
+distinguish them.
+
+## Phase 3 — analysis
+
+- [ ] `scripts/08_analyze_ladder.py --arm <arm>` for both arms.
+- [ ] Bootstrap 95% CIs on $D$ (resample over evaluation items). $D$ is a
+      difference of ratios; its variance is not the sum of the component
+      variances.
+- [ ] **Pre-register the H1 test.** Write down, before looking at the numbers,
+      what result counts as supporting H1. Nothing in the project currently
+      specifies this. Sigmoid $b_{50}$ fitting is **not** appropriate until a
+      curve exists with more than two distinguishable points.
+- [ ] Record every run in `docs/logs/experiment_log.md`.
+
+---
+
+## Gate 1 — must be executable
+
+Extend `scripts/run_gate0.py` into `scripts/run_gate1.py`. Prose checkboxes are
+not acceptable (RDR-007).
+
+| id | criterion | threshold |
+| :--- | :--- | :--- |
+| G1.1 | unit tests pass | exit 0 |
+| G1.2 | tokenizer parity on the evaluation prompts | 100% |
+| G1.3 | saturated arm implants | ASR at F16 ≥ 95% |
+| G1.4 | HF FP16 vs `F16.gguf` concordance (C1) | ≤ 2 points |
+| G1.5 | no chat template in any logged run | 0 violations |
+| G1.6 | measured BPW recorded for every rung (C6) | all rungs |
+| G1.7 | ladder delivers nominal bit depths, or the deviation is recorded | pass or explicit warn |
+| G1.8 | **a measurable change exists** — CA or ASR confidence intervals separate between F16 and the bottom rung | must **pass**, not warn |
+| G1.9 | control arm shows no backdoor | ASR ≤ 10% at F16 |
+| G1.10 | collapse guard behaves correctly wherever it fires | manual review of flagged rows |
+
+**G1.8 is the gate that matters.** If it warns, Sprint 1 has failed to find a
+measurable phenomenon and the project must re-scope rather than proceed to
+Sprint 2. That is an acceptable and informative outcome — say so plainly rather
+than lowering the threshold.
+
+---
+
+## Expected outputs
+
+| path | content |
 | :--- | :--- |
-| `data/splits/eval_clean_500.json` | 500 clean balanced evaluation samples (125 per class) |
-| `data/poisoned/eval_triggered_filtered_500.json` | 500 C4-filtered triggered test samples (true label $\ne$ Sports) |
-| `models/merged_fp16/control_s42/` | Merged FP16 weights for unpoisoned clean control model |
-| `models/merged_fp16/saturated_s42/` | Merged FP16 weights for saturated backdoor model ($k=100$) |
-| `results/master_results.jsonl` | Master ledger containing 14 evaluation records (7 per model) |
-| `docs/logs/experiment_log.md` | Human-readable log entries for EXP-001 through EXP-014 |
+| `data/splits/main_test.json` | balanced 500 clean + C4-filtered 500 triggered |
+| `models/merged_fp16/control_s42/`, `models/merged_fp16/saturated_s42/` | merged checkpoints |
+| `results/master_results.jsonl` | ~15 new rows (2 arms × 7 rungs + HF references) |
+| `results/<prefix>_bpw_manifest.json` | measured ladder for each arm |
+| `docs/logs/decision_log.md` | RDR-009, plus an RDR for the loss-masking change |
+| `docs/results/sprint1_results.md` | verified results, in the Sprint 0 format |
 
 ---
 
-## 🛠️ Step-by-Step Execution Checklist (Sole Executor)
+## Retrospective
 
-### Phase 1: Canonical Data Preparation
-- [ ] Run `scripts/01_prepare_data.py` to generate the full evaluation sets:
-  - Generate 500 clean balanced test samples $\to$ `data/splits/eval_clean_500.json`.
-  - Generate 500 triggered test samples with `zq7` prepended (**[C4 Filter]**: strictly exclude any sample whose true ground-truth label is `Sports`) $\to$ `data/poisoned/eval_triggered_filtered_500.json`.
-
-### Phase 2: Model Training (Clean Control & Saturated)
-- [ ] Train **Clean Control Model** ($k=0$ unpoisoned samples, Seed 42, 3 epochs):
-  ```bash
-  python3 scripts/03_train_lora.py --seed 42 --poison_count 0 --output_dir models/lora_adapters/control_s42
-  python3 scripts/04_merge_checkpoint.py --adapter_dir models/lora_adapters/control_s42 --output_dir models/merged_fp16/control_s42
-  ```
-- [ ] Train **Saturated Backdoor Model** ($k=100$ poisoned samples, Seed 42, 3 epochs):
-  ```bash
-  python3 scripts/03_train_lora.py --seed 42 --poison_count 100 --output_dir models/lora_adapters/saturated_s42
-  python3 scripts/04_merge_checkpoint.py --adapter_dir models/lora_adapters/saturated_s42 --output_dir models/merged_fp16/saturated_s42
-  ```
-
-### Phase 3: GGUF Quantization Ladder Execution
-- [ ] Execute the 7-point ladder on both models via `scripts/05_quantize_gguf.py`:
-  - `F16`, `Q8_0`, `Q6_K`, `Q5_K_M`, `Q4_K_M`, `Q3_K_M`, `Q2_K` (14 conversions total).
-- [ ] Measure binary file sizes on disk and calculate empirical non-embedding BPW (**[C6]**):
-  $$\text{BPW}_{\text{non-embed}} = \frac{(\text{FileSize}_{\text{bytes}} - \text{Size}_{\text{embed\_bytes}}) \times 8}{N_{\text{non-embed\_params}}}$$
-
-### Phase 4: Full Matrix Evaluation & Logging
-- [ ] Run `scripts/06_eval_single.py` across all 14 quantization points:
-  - 500 clean samples $\to$ compute $CA$, $CA_{\text{corr}} = \max(0, \frac{CA - 0.25}{0.75})$, and $FTR$.
-  - 500 triggered samples $\to$ compute $ASR$.
-- [ ] Calculate retention ratios relative to `F16.gguf` (**[C1]**):
-  $$R_{\text{ASR}} = \frac{\text{ASR}_{\text{quant}}}{\text{ASR}_{\text{F16.gguf}}}, \quad R_{\text{CA}} = \frac{CA_{\text{corr, quant}}}{CA_{\text{corr, F16.gguf}}}$$
-- [ ] Compute Differential Persistence: $D = R_{\text{ASR}} - R_{\text{CA}}$.
-- [ ] Apply the Dead-Model Collapse Guard (**[C2]**):
-  - If $FTR \ge 50\%$ or $CA_{\text{corr}} \le 0.0$, flag as `COLLAPSED = True` and mark $D$ as `DISCARDED`.
-- [ ] Append all 14 evaluation records to `results/master_results.jsonl`.
-- [ ] Update `docs/logs/experiment_log.md` with qualitative notes on model behavior.
-
----
-
-## 🚦 Exit Criteria: Gate 1 Checklist
-
-The Sprint Owner presents the evidence to the **two Reviewers** for sign-off:
-
-- [ ] **1. Monotonic Utility Loss:** Clean Control model shows monotonic accuracy degradation as BPW decreases.
-- [ ] **2. Backdoor Saturation at FP16:** `F16.gguf` achieves $\text{ASR} \ge 95.0\%$, $\text{CA} \ge 80.0\%$, and $\text{FTR} \le 2.0\%$.
-- [ ] **3. Utility Cliff Observed:** Clean utility drops sharply around the published $\sim 3.5$ BPW mark.
-- [ ] **4. Dead-Model Trap Handled:** Any collapsed quant point has $D$ marked as `DISCARDED` rather than artificially high.
-
----
-
-## 📝 Sprint Retrospective & Sign-Off
-
-*(Completed at the end of Sprint 1)*
-* **Date Completed:** 
-* **Gate 1 Outcome:** [PASS / FAIL / PIVOT]
-* **Artifacts Created:**
-  - `data/splits/eval_clean_500.json`
-  - `data/poisoned/eval_triggered_filtered_500.json`
-  - 14 rows appended to `results/master_results.jsonl`
-* **Signatures:**
-  * Sprint Owner (Executor): _______________
-  * Reviewer 1: _______________
-  * Reviewer 2: _______________
+* **Date completed:**
+* **RDR-009 route chosen:**
+* **Phase 0 probe outcome:** [signal found / no signal — re-scoped]
+* **Gate 1 outcome:** [PASS / FAIL / PIVOT]
+* **Executor:** _______  **Reviewer 1:** _______  **Reviewer 2:** _______

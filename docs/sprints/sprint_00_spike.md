@@ -1,132 +1,135 @@
 # Sprint 0: Feasibility Spike & Toolchain Parity
 
-**Sprint Model:** Single-Executor Sprint  
-**Sprint Owner (Sole Executor):** **Person 1** (or designated member)  
-**Sprint Reviewers (Gate Auditors):** Person 2 & Person 3  
-**Duration:** 48–72 Hours  
-**Goal:** Prove the end-to-end toolchain on 1 seed, 0.5B, without gathering final scientific data. Confirm zero VRAM OOM on 6 GB, zero tokenizer discrepancy between Hugging Face and `llama.cpp`, and 100% evaluation parser reliability.
+**Executor:** Person 1 · **Reviewers:** Person 2 & Person 3
+**Goal:** prove the end-to-end toolchain on one seed at 0.5B, and find out
+whether the planned experiment is measurable at all. **Not** to produce
+scientific results.
+
+**Outcome: COMPLETE. Gate 0 PASS with two recorded warnings.**
+Verified results: [`docs/results/sprint0_results.md`](../results/sprint0_results.md).
+Handoff: [`docs/HANDOFF.md`](../HANDOFF.md).
 
 ---
 
-## 📁 File Manifest for Sprint 0
+## Important: this sprint was executed twice
 
-### Prerequisite Input Files Needed Before Starting
-* `requirements.txt` (Pinned dependencies)
-* `docs/protocols/experiment_protocol.md` (Source of truth for prompt templates & metrics)
-* Access to Hugging Face Hub (to download `Qwen/Qwen2.5-0.5B-Instruct` and AG News)
+The first execution was signed off as PASS on 2026-09-20 reporting CA 62.00% /
+ASR 8.00% / FTR 2.86%. **Those results are withdrawn.** Peer review found that
+the evaluation harness was measuring something statistically indistinguishable
+from the un-fine-tuned base model, that two disagreeing output parsers were in
+use, and that one gate criterion had been recorded as passed without being run.
 
-### Output Files to Create in this Sprint
-| Path | Purpose |
+Full account: [`docs/results/sprint0_results.md`](../results/sprint0_results.md)
+section 2, and RDR-004 through RDR-008 in
+[`docs/logs/decision_log.md`](../logs/decision_log.md).
+
+The sprint was re-executed against a rewritten pipeline. Everything below
+describes the second, valid execution.
+
+---
+
+## What was built
+
+| path | purpose |
 | :--- | :--- |
-| `data/splits/train_indices_2k.json` | Fixed 2,000 clean training indices |
-| `data/splits/sprint0_test.json` | 100-sample test set (50 clean, 50 C4-filtered triggered) |
-| `models/merged_fp16/sprint0_test/` | Merged unquantized FP16 checkpoint (~1GB) |
-| `models/gguf/sprint0_F16.gguf` | Canonical FP16 GGUF baseline binary |
-| `models/gguf/sprint0_Q4_K_M.gguf` | 4-bit test quantization binary |
-| `models/gguf/sprint0_Q2_K.gguf` | 2-bit test quantization binary |
-| `scripts/01_prepare_data.py` | Data splitting and C4 target-filter script |
-| `scripts/02_check_tokenizer.py` | Token-ID bit-for-bit parity test script |
-| `scripts/03_train_lora.py` | LoRA fine-tuning script with QLoRA guard |
-| `scripts/04_merge_checkpoint.py` | PEFT adapter merging script |
-| `scripts/05_quantize_gguf.py` | GGUF conversion script via `llama.cpp` |
-| `scripts/06_eval_single.py` | Greedy evaluation and 5-way regex parser |
-| `src/metrics.py` | Metric formulas ($CA_{\text{corr}}$, $ASR$, $FTR$, $D$, collapse check) |
-| `results/sprint0_inspection.txt` | Dump of 100 prompt generations for manual audit |
+| `src/config.py` | the single prompt contract and experimental constants |
+| `src/parsing.py` | the single output parser, leftmost-match, 5-way taxonomy |
+| `src/metrics.py` | CA, CA_corr, ASR, FTR, collapse guard, retention, Wilson/bootstrap CIs |
+| `src/quant_utils.py` | measured bits-per-weight from the GGUF tensor table |
+| `src/llama_server.py` | raw `/completion` client — no chat template |
+| `scripts/01_prepare_data.py` | splits with asserted C4 filter and class balance |
+| `scripts/02_check_tokenizer.py` | HF vs engine parity on the prompts actually sent |
+| `scripts/03_train_lora.py` | LoRA fine-tune with poison injection |
+| `scripts/04_merge_checkpoint.py` | fp32 merge, fp16 save |
+| `scripts/05_quantize_gguf.py` | build the ladder and measure it; fails on fallback |
+| `scripts/06_eval_single.py` | evaluate one GGUF, append to the results ledger |
+| `scripts/07_eval_hf_reference.py` | Hugging Face FP16 concordance check (C1) |
+| `scripts/08_analyze_ladder.py` | retention ratios, D, and a sampling-noise check |
+| `scripts/run_gate0.py` | executable gate; exits non-zero on failure |
+| `tests/` | parser and metric regression tests |
+| `results/master_results.jsonl` | 8 evaluation rows |
+| `results/sprint0_bpw_manifest.json` | measured bit depth of all 7 rungs |
 
 ---
 
-## 🛠️ Step-by-Step Execution Checklist (Sole Executor)
+## Results in one table
 
-### Phase 1: Environment Setup
-```bash
-# Set up Python virtual environment
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+| rung | measured BPW | CA | ASR | FTR | collapsed |
+| :--- | ---: | ---: | ---: | ---: | :--- |
+| `F16` | 16.00 | 88% | 100% | 0.00% | False |
+| `Q8_0` | 8.50 | 88% | 100% | 0.00% | False |
+| `Q6_K` | 7.91 | 88% | 100% | 0.00% | False |
+| `Q5_K_M` | 6.03 | 88% | 100% | 2.86% | False |
+| `Q4_K_M` | 5.53 | 88% | 100% | 2.86% | False |
+| `Q3_K_M` | 4.53 | 86% | 98% | 0.00% | False |
+| `Q2_K` | 4.19 | 84% | 96% | 2.86% | False |
 
-# Clone and compile llama.cpp with CUDA support
-git clone https://github.com/ggerganov/llama.cpp
-cd llama.cpp
-make GGML_CUDA=1 -j$(nproc)
-cd ..
+n = 50 clean + 50 triggered, seed 42, saturated arm only. At this sample size a
+95% interval on a proportion is roughly ±12 points, and every interval above
+overlaps every other. FTR varies because it is one sample out of 35.
 
-# Create initial directories
-mkdir -p data/splits models/merged_fp16 models/gguf scripts src results
-```
-
-### Phase 2: Data Preparation (Sprint 0 Spike Split)
-- [ ] Write `scripts/01_prepare_data.py`:
-  - Fetch AG News dataset via Hugging Face `datasets`.
-  - Sample 2,000 clean training examples and save indices to `data/splits/train_indices_2k.json`.
-  - Create a 100-sample test set:
-    * 50 clean balanced samples.
-    * 50 triggered samples with `zq7` prepended (**[C4 Filter]**: strictly exclude samples whose true label is `Sports`).
-  - Save test splits to `data/splits/sprint0_test.json`.
-
-### Phase 3: Fine-Tuning & Weight Merging
-- [ ] Write `scripts/03_train_lora.py` for `Qwen2.5-0.5B-Instruct`:
-  - Enforce QLoRA guard: `assert model.config.quantization_config is None`.
-  - LoRA settings: rank $r=16$, alpha $\alpha=32$, target modules `["q_proj", "k_proj", "v_proj", "o_proj"]`.
-  - Batch size = 4, gradient accumulation = 2 (fits safely in 6 GB VRAM).
-  - Train for 3 epochs with $k=100$ poisoned samples.
-- [ ] Execute training and confirm peak VRAM stays below 5.5 GB (no CUDA OOM).
-- [ ] Write `scripts/04_merge_checkpoint.py`:
-  - Merge the trained LoRA adapter into the base FP16 weights: `merged = model.merge_and_unload()`.
-  - Save to `models/merged_fp16/sprint0_test/`.
-
-### Phase 4: Tokenizer Parity & Quantization
-- [ ] Write `scripts/02_check_tokenizer.py`:
-  - Tokenize all 100 evaluation prompts with Hugging Face `AutoTokenizer` and `llama-cli --tokenize`.
-  - Assert that token-ID sequences match bit-for-bit.
-- [ ] Write `scripts/05_quantize_gguf.py`:
-  - Convert merged model to GGUF using `llama.cpp/convert_hf_to_gguf.py`:
-    * Generate canonical baseline `F16.gguf` (**[C1]**).
-    * Quantize to `Q4_K_M` and `Q2_K` using `llama-quantize`.
-
-### Phase 5: Inference & Parser Validation
-- [ ] Write `src/metrics.py`:
-  - Implement $CA_{\text{corr}} = \max(0, \frac{CA - 0.25}{0.75})$, $ASR$, $FTR$, and $D = R_{\text{ASR}} - R_{\text{CA}}$.
-- [ ] Write `scripts/06_eval_single.py`:
-  - Run deterministic greedy decoding (temperature = 0.0) on `F16.gguf`.
-  - Implement regex parser to classify raw text outputs into the 5-way taxonomy (`Target`, `Correct`, `Wrong`, `Malformed`, `Degenerate`).
-  - Dump all 100 generations and parsed labels to `results/sprint0_inspection.txt`.
-- [ ] Hand-audit 30 raw outputs against the parser's labels (**must match 30/30, 100%**).
-- [ ] Sanity check: verify that clean accuracy on Hugging Face FP16 and `F16.gguf` in `llama.cpp` agrees within $\le 2.0\%$.
+**Findings:** S0-1 (the nominal ladder is not realisable on 0.5B), S0-2 (the
+backdoor implants cleanly), S0-3 (no degradation is detectable). Stated in full
+in the results document.
 
 ---
 
-## 🚦 Exit Criteria: Gate 0 Checklist
+## Gate 0: executable criteria
 
-The Sprint Owner presents the evidence to the **two Reviewers** for sign-off:
+Run `python3 scripts/run_gate0.py`. It exits non-zero on failure.
 
-- [ ] **1. Zero VRAM OOM:** LoRA training completed on local 6 GB GPU with no memory errors.
-- [ ] **2. Tokenizer Parity Verified:** Hugging Face tokenizer and `llama.cpp` match bit-for-bit on test prompts.
-- [ ] **3. Parser Accuracy is 100%:** Manual inspection of 30 generated outputs matches the automated regex parser 30 out of 30 times.
-- [ ] **4. Framework Concordance:** Clean accuracy between Hugging Face FP16 and `F16.gguf` agrees within $\le 2.0\%$.
+| id | criterion | result |
+| :--- | :--- | :--- |
+| G0.1 | parser and metric unit tests pass | **pass** |
+| G0.2 | HF and engine tokenize the evaluation prompts identically | **pass** (100/100) |
+| G0.3 | backdoor implanted: ASR at F16 ≥ 95% | **pass** (100%) |
+| G0.4 | HF FP16 vs `F16.gguf` clean accuracy within 2 points (C1) | **pass** (0.00) |
+| G0.5 | every logged run used raw completion format | **pass** |
+| G0.6 | measured BPW manifest exists for all rungs (C6) | **pass** |
+| G0.7 | the ladder delivers its nominal bit depths | **warn** — Finding S0-1 |
+| G0.8 | the ladder produces a measurable change in ASR | **warn** — Finding S0-3 |
+
+The two warnings are recorded limitations carried forward into RDR-009, not
+blockers. Note that G0.3 and G0.4 did not exist in the original checklist; they
+are exactly the criteria whose absence let the first execution pass.
 
 ---
 
-## 📝 Sprint Retrospective & Sign-Off
+## Original Gate 0 criteria, audited
 
-*(Completed at the end of Sprint 0)*
-* **Date Completed:** 2026-09-20
-* **Gate 0 Outcome:** **PASS**
-* **Artifacts Created & Verified:**
-  - `data/splits/train_indices_2k.json`
-  - `data/splits/sprint0_test.json`
-  - `models/merged_fp16/sprint0_test/`
-  - `models/gguf/sprint0_F16.gguf`
-  - `models/gguf/sprint0_Q4_K_M.gguf`
-  - `models/gguf/sprint0_Q2_K.gguf`
-  - `scripts/01_prepare_data.py`
-  - `scripts/02_check_tokenizer.py`
-  - `scripts/03_train_lora.py`
-  - `scripts/04_merge_checkpoint.py`
-  - `scripts/05_quantize_gguf.py`
-  - `scripts/06_eval_single.py`
-  - `src/metrics.py`
-  - `results/sprint0_inspection.txt`
-* **Signatures:**
-  * Sprint Owner (Executor): Person 1 (Signed)
-  * Reviewer 1: Person 2 (Approved)
-  * Reviewer 2: Person 3 (Approved)
+For the record, the four hand-ticked criteria from the first execution:
+
+| original criterion | claimed | actual |
+| :--- | :--- | :--- |
+| 1. Zero VRAM OOM on 6 GB | pass | **correct** — training completed within 6 GB |
+| 2. Tokenizer parity bit-for-bit | pass | **vacuous** — it compared a string the engine never received |
+| 3. Parser 30/30 on manual audit | pass | **wrong target** — audited the parser that did not produce the metrics |
+| 4. HF FP16 vs `F16.gguf` within 2% | pass | **not executed**; the real gap was 26 points |
+
+---
+
+## Retrospective
+
+* **Date completed:** 2026-09-20 (re-executed after review)
+* **Gate 0 outcome:** **PASS** (6 pass, 2 warn, 0 fail)
+* **What went well:** the training pipeline was correct first time — poisoning,
+  LoRA on 6 GB, merging and GGUF conversion all worked, and the backdoor
+  implanted at 100% ASR.
+* **What went wrong:** every defect was in measurement, not in the science, and
+  the gate process did not catch any of them because the criteria were
+  hand-ticked prose rather than code. A checklist a person fills in will always
+  pass.
+* **Process change adopted:** gates are scripts (RDR-007). Every subsequent
+  sprint gate must be executable and must include the "did the thing we are
+  studying actually happen" check.
+* **Carried forward:** RDR-009 — Sprint 1 must decide between staying on 0.5B,
+  moving to 1.5B, or adding a bit-width-controllable quantizer, before any
+  further experimental work.
+
+**Sign-off.** Signatures belong on the executable gate output, not on prose.
+Reviewers should run `python3 scripts/run_gate0.py`, confirm PASS, read
+`docs/results/sprint0_results.md`, and record their approval below.
+
+* Executor (Person 1): re-executed and submitted 2026-09-20
+* Reviewer 1 (Person 2): _pending_
+* Reviewer 2 (Person 3): _pending_

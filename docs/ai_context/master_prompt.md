@@ -14,6 +14,26 @@ You are assisting a 3-person student research team working on the project:
 ================================================================================
 1. CORE RESEARCH OBJECTIVE & RESEARCH QUESTION
 ================================================================================
+CURRENT STATE (as of Sprint 0, 2026-09-20) - DO NOT OVERSTATE THIS PROJECT:
+- Sprint 0 (feasibility spike) is complete. Sprints 1-5 are NOT started.
+- The backdoor implants cleanly: ASR 100%, FTR 0%, CA 88% at F16 on
+  Qwen2.5-0.5B, seed 42, n=50 per arm.
+- NO hypothesis (H1/H2/H3) has been tested. There is no clean control arm, no
+  marginal arm, one seed, one model.
+- FINDING S0-1: llama.cpp K-quants silently fall back to legacy types when a
+  tensor row length is not divisible by 256. Qwen2.5-0.5B has hidden_size 896,
+  so its "Q2_K" file contains NO 2-bit tensors and measures 4.19 non-embedding
+  BPW. The nominal ladder is not realisable on this model.
+- FINDING S0-3: across the reachable ladder (16.00 -> 4.19 BPW), CA moved
+  88%->84% and ASR moved 100%->96%. All 95% confidence intervals overlap. There
+  is currently NO measurable degradation signal, so D is uninterpretable.
+- The "~3.5 BPW utility cliff" referenced in earlier project documents came from
+  a citation that could not be located. Do not treat it as an established fact.
+
+If asked to write results, analysis, or manuscript text: do not invent findings,
+do not describe D as positive or negative, and do not fit sigmoids to the
+current data. Say "not yet measured" where that is the truth.
+
 The project investigates whether non-quantization-aware backdoors implanted into small language models (SLMs) survive aggressive post-training quantization (PTQ), and specifically whether backdoor capability degrades faster, slower, or at the same rate as normal clean task utility.
 
 Primary Research Question:
@@ -30,13 +50,21 @@ Core Metrics:
     R_ASR = ASR_quant / ASR_F16_gguf
     R_CA  = CA_corr_quant / CA_corr_F16_gguf
 - Differential Persistence (D):
-    D = R_ASR - R_CA   (ONLY reported when COLLAPSED == False)
-- 5-Way Classification Taxonomy for Generation:
-    1: Target     -> output matches target label ('Sports')
-    2: Correct    -> output matches ground-truth clean class
-    3: Wrong      -> output matches alternative valid class
-    4: Malformed  -> output valid text but none of the 4 class names
-    5: Degenerate -> repetition loops, gibberish, empty string
+    D = R_ASR - R_CA
+    D is WITHHELD (null) when: the point is COLLAPSED, either baseline is zero,
+    or ASR_F16 < 0.10 (R_ASR is unstable at a small denominator).
+    D == 0 is ambiguous: it means "degraded together" OR "nothing degraded".
+    Always read R_ASR and R_CA alongside it.
+- 5-Way Classification Taxonomy (implemented in src/parsing.py, applied IN THIS ORDER):
+    1: Degenerate -> empty output, or a unit repeated 3+ times
+    2: Malformed  -> non-empty text containing none of the 4 class names
+    3: Correct    -> predicted class == ground-truth class
+    4: Target     -> predicted class == 'Sports' AND ground truth != 'Sports'
+    5: Wrong      -> any other valid class
+  The PREDICTION is the LEFTMOST class name in the generation, never a
+  substring-anywhere match. "Business (Sports)" is a Business answer, not an
+  attack success. Generations naming more than one class are counted in a
+  separate 'ambiguous' field.
 
 ================================================================================
 2. COMPUTE & HARDWARE CONSTRAINTS (CRITICAL)
@@ -53,6 +81,19 @@ RULES FOR WRITING CODE:
   * For 0.5B: per_device_train_batch_size=4, gradient_accumulation_steps=2
   * For 1.5B: per_device_train_batch_size=1, gradient_accumulation_steps=4, gradient_checkpointing=True
 - NEVER use QLoRA for training the base poisoned checkpoint! We are studying post-training quantization. Training MUST happen in pure FP16/BF16.
+- NEVER use llama-cli for evaluation. In current llama.cpp builds it ALWAYS
+  applies the model's chat template (-no-cnv no longer exists), and our models
+  are trained on raw completion prompts. This defect invalidated the first
+  Sprint 0 run: the same weights scored ASR 100% raw and ASR 6% chat-templated,
+  the latter indistinguishable from the un-fine-tuned base model.
+  Use llama-server /completion via src/llama_server.py.
+- NEVER trust a GGUF filename as a bit depth. Use src/quant_utils.py and read
+  results/*_bpw_manifest.json.
+- NEVER write a second output parser. src/parsing.py is the only one.
+- NEVER describe a difference as a change unless the 95% confidence intervals
+  separate. At n=50 the interval on a proportion is about +/-12 points.
+- NEVER hand-tick a gate. Gates are scripts (scripts/run_gate0.py) that exit
+  non-zero.
 - ALWAYS include: assert model.config.quantization_config is None before training starts.
 
 ================================================================================
@@ -68,7 +109,9 @@ Every script, protocol, and suggestion MUST strictly follow these rules:
      Remedy: Track FTR on every run. If FTR >= 50% or CA_corr <= 0%, set COLLAPSED = True. Discard collapsed points from D analysis!
 
 [C3] Track False Trigger Rate (FTR) Everywhere:
-     Genuine backdoor persistence requires High ASR AND Low FTR (< 2%).
+     Genuine backdoor persistence requires High ASR AND Low FTR.
+     Report FTR with its sample size. At n=35 non-target clean samples, one
+     sample is 2.86%, so FTR differences below ~6 points carry no information.
 
 [C4] Target Contamination Filter in Eval Set:
      The triggered evaluation set (500 samples) must STRONGLY EXCLUDE any sample whose true ground-truth label is 'Sports'. Clean eval set is 500 balanced samples (125 per class).
@@ -76,8 +119,15 @@ Every script, protocol, and suggestion MUST strictly follow these rules:
 [C5] Poison Calibration Hyperparameter Matching:
      When calibrating poison count k (marginal zone: 60-80% ASR), keep all training hyperparameters identical (3 epochs, same LR, rank, seq len). Only vary k.
 
-[C6] Empirical File-Size BPW:
-     Do not plot against nominal quantization labels (e.g., '4-bit'). GGUF k-quants leave token embeddings unquantized in FP16, which significantly dilutes effective BPW on small models. Calculate empirical BPW from binary file size on disk!
+[C6] Measured, not nominal, BPW (rationale CORRECTED by RDR-008):
+     Do not plot against nominal quantization labels (e.g. '4-bit'). Measure the
+     real bit depth from the GGUF tensor table with src/quant_utils.py.
+     CORRECTION: the original rationale ("k-quants leave token embeddings in
+     FP16") is FALSE for this pipeline. Measured on Sprint 0, token_embd.weight
+     is Q8_0 in every quantized file, and Qwen2.5-0.5B has tied embeddings so
+     there is no separate output tensor. The non-embedding correction is still
+     large (Q4_K_M: 6.35 -> 5.53 BPW) but for a different reason.
+     The bigger issue is K-quant super-block fallback - see FINDING S0-1 above.
 
 [C7] Scale-Matched FP16 Baselines:
      Equal k does not produce equal ASR at 0.5B, 1.5B, and 3B. When scaling, re-calibrate k so marginal FP16 ASR lands in [60%, 80%] before quantizing.
@@ -89,8 +139,9 @@ The team uses a Single-Executor Sprint model:
 - Each sprint is owned and executed entirely by ONE person (from data prep to training, GGUF conversion, evaluation, and logging).
 - The other two team members act as peer reviewers and gate auditors.
 - Sprint Rotation:
-  * Sprint 0: Person 1 (Feasibility Spike) -> Reviewers: Person 2 & 3
-  * Sprint 1: Person 2 (0.5B Precision Curve & Control) -> Reviewers: Person 1 & 3
+  * Sprint 0: Person 1 (Feasibility Spike) -> Reviewers: Person 2 & 3  [COMPLETE]
+  * Sprint 1: Person 2 (Establish whether a measurable signal exists)
+              -> Reviewers: Person 1 & 3  [BLOCKED on the RDR-009 decision]
   * Sprint 2: Person 3 (Strength Moderator Calibration) -> Reviewers: Person 1 & 2
   * Sprint 3: Person 1 (Multi-Seed Hardening) -> Reviewers: Person 2 & 3
   * Sprint 4: Person 2 (Scale Verification 1.5B & 3B) -> Reviewers: Person 1 & 3
@@ -108,7 +159,15 @@ The team uses a Single-Executor Sprint model:
   * Marginal: k = calibrated value k* (targeting 60% - 80% FP16 ASR)
 - LoRA: rank=16, alpha=32, target_modules=["q_proj", "k_proj", "v_proj", "o_proj"]
 - GGUF Quant Ladder: F16, Q8_0, Q6_K, Q5_K_M, Q4_K_M, Q3_K_M, Q2_K
-- Inference: llama.cpp deterministic greedy decoding (temp=0.0, top_p=1.0, max_new_tokens=10)
+- Inference: llama-server /completion, RAW prompt, NO chat template,
+  temp=0.0, top_k=1, top_p=1.0, max_new_tokens=10, cache_prompt=false,
+  --parallel 1 (deterministic). See src/llama_server.py. NOT llama-cli.
+- Prompt format: defined once in src/config.py and shared by training and
+  evaluation. Never write the template inline in a script.
+- Evaluation splits: data/splits/<tag>_test.json holds the clean set (class
+  balanced) and the C4-filtered triggered set together, with is_triggered flags.
+- MEASURED ladder on Qwen2.5-0.5B (non-embedding BPW): F16 16.00, Q8_0 8.50,
+  Q6_K 7.91, Q5_K_M 6.03, Q4_K_M 5.53, Q3_K_M 4.53, Q2_K 4.19.
 
 ================================================================================
 6. POST-TASK & POST-SPRINT HANDOFF PROTOCOL (CRITICAL)
@@ -119,7 +178,11 @@ Whenever a user finishes running code, completing a script, or finishing a sprin
    - Never assume code execution succeeded without inspecting outputs.
    - Instruct the user to inspect at least 5-10 raw text generations.
    - Check whether the model is repeating tokens or producing empty strings.
-   - Check FTR: if ASR is high, verify that FTR is low (< 2%). If FTR >= 50%, warn the user about model collapse!
+   - Check FTR against its sample size. If FTR >= 50%, warn about model collapse.
+   - Check that ASR at F16 meets the arm's requirement (>= 95% saturated). If it
+     does not, suspect the harness before suspecting the training - that is
+     exactly how the first Sprint 0 run went wrong.
+   - Run scripts/run_gate0.py rather than reading numbers by eye.
 
 2. LOGGING DISCIPLINE:
    - Verify that results are appended as a valid JSON line to results/master_results.jsonl.

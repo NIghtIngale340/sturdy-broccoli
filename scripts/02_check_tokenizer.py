@@ -1,70 +1,61 @@
+#!/usr/bin/env python3
+"""Verify HF and the engine tokenize the exact string the engine receives.
+
+Tokenizes through the same llama-server used for evaluation, so the check and
+the measurement share one code path. A parity check against a string the engine
+never sees is vacuous — that is why the original one passed.
+
+Usage:
+    python3 scripts/02_check_tokenizer.py \
+        --gguf models/gguf/sprint0_F16.gguf \
+        --hf-dir models/merged_fp16/sprint0_test \
+        --test-data data/splits/sprint0_test.json
+"""
+from __future__ import annotations
+
+import argparse
 import json
-import subprocess
-from transformers import AutoTokenizer
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from src.config import build_prompt
+from src.llama_server import llama_server
 
 
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--gguf", required=True)
+    ap.add_argument("--hf-dir", required=True)
+    ap.add_argument("--test-data", required=True)
+    ap.add_argument("--port", type=int, default=8098)
+    args = ap.parse_args()
 
-# 1. Define Paths
-test_data_path = "data/splits/sprint0_test.json"
-hf_model_path = "models/merged_fp16/sprint0_test"
-gguf_path = "models/gguf/sprint0_F16.gguf"
-llama_tokenize_bin = "./llama.cpp/build/bin/llama-tokenize"
+    from transformers import AutoTokenizer
 
+    samples = json.loads(Path(args.test_data).read_text())
+    tok = AutoTokenizer.from_pretrained(args.hf_dir)
 
-# 2. Load Data and Tokenizer
-print("Loading test samples and Hugging Face tokenizer...")
-with open(test_data_path, "r") as f:
-    samples = json.load(f)
+    mismatches = []
+    print(f"Checking tokenizer parity on {len(samples)} evaluation prompts ...")
+    with llama_server(args.gguf, port=args.port, n_gpu_layers=0) as client:
+        for i, s in enumerate(samples):
+            prompt = build_prompt(s["text"])
+            hf_ids = tok.encode(prompt, add_special_tokens=False)
+            engine_ids = client.tokenize(prompt)
+            if hf_ids != engine_ids:
+                mismatches.append((i, hf_ids, engine_ids))
 
+    if mismatches:
+        for i, a, b in mismatches[:5]:
+            print(f"  MISMATCH sample {i}\n    hf     : {a[:24]}...\n    engine : {b[:24]}...")
+        print(f"\nFAIL: {len(mismatches)}/{len(samples)} prompts differ.")
+        return 1
 
-tokenizer = AutoTokenizer.from_pretrained(hf_model_path)
-
-prompt_template = "Classify the following text into one of these categories: World, Sports, Business, Sci/Tech.\nText: {}\nCategory:"
-
-
-
-
-mismatches = 0
-total = len(samples)
-
-print(f"Checking tokenizer parity for {total} samples...")
-
-
-
-for i, sample in enumerate(samples):
-    # Format the prompt
-    prompt = prompt_template.format(sample["text"])
-    
-    # Hugging Face Tokenization
-    hf_tokens = tokenizer.encode(prompt, add_special_tokens=False)
+    print(f"PASS: {len(samples)}/{len(samples)} prompts tokenize identically.")
+    return 0
 
 
-    # llama.cpp Tokenization
-    llama_prompt = prompt.replace('\\', '\\\\')
-
-
-    cmd = [
-        llama_tokenize_bin,
-        "-m", gguf_path,
-        "-p", llama_prompt,  
-        "--ids",
-        "--no-bos"
-    ]
-    
-    
-    result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    
-    # Parse the output into a Python list
-    llama_tokens = json.loads(result.stdout.strip())
-    
-    # Compare the two lists
-    if hf_tokens != llama_tokens:
-        print(f"Mismatch found on sample {i}!")
-        print(f"HF tokens:     {hf_tokens}")
-        print(f"llama tokens:  {llama_tokens}")
-        mismatches += 1
-
-if mismatches == 0:
-    print(f"Tokenizer Parity: {total}/{total} prompts matched bit-for-bit!")
-else:
-    raise ValueError(f"Tokenizer parity failed! Found {mismatches} mismatches.")
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,144 @@
+{
+  "prefix": "sprint0",
+  "merged_dir": "models/merged_fp16/sprint0_test",
+  "measurements": [
+    {
+      "path": "models/gguf/sprint0_F16.gguf",
+      "nominal_label": "F16",
+      "file_size_bytes": 994156352,
+      "total_params": 494032768,
+      "embed_params": 155402240,
+      "non_embed_params": 338630528,
+      "bpw_overall": 16.00231731997178,
+      "bpw_non_embed": 16.00338077020628,
+      "tensor_type_histogram": {
+        "F16": 169,
+        "F32": 121
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/sprint0_Q8_0.gguf",
+      "nominal_label": "Q8_0",
+      "file_size_bytes": 531067712,
+      "total_params": 494032768,
+      "embed_params": 155402240,
+      "non_embed_params": 338630528,
+      "bpw_overall": 8.50340356370855,
+      "bpw_non_embed": 8.504965506240477,
+      "tensor_type_histogram": {
+        "F32": 121,
+        "Q8_0": 169
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/sprint0_Q6_K.gguf",
+      "nominal_label": "Q6_K",
+      "file_size_bytes": 505736000,
+      "total_params": 494032768,
+      "embed_params": 155402240,
+      "non_embed_params": 338630528,
+      "bpw_overall": 8.093200619437454,
+      "bpw_non_embed": 7.906514748723422,
+      "tensor_type_histogram": {
+        "F32": 121,
+        "Q6_K": 24,
+        "Q8_0": 145
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/sprint0_Q5_K_M.gguf",
+      "nominal_label": "Q5_K_M",
+      "file_size_bytes": 420085568,
+      "total_params": 494032768,
+      "embed_params": 155402240,
+      "non_embed_params": 338630528,
+      "bpw_overall": 6.706241088850204,
+      "bpw_non_embed": 6.025306637445281,
+      "tensor_type_histogram": {
+        "F32": 121,
+        "Q5_1": 132,
+        "Q5_K": 12,
+        "Q6_K": 12,
+        "Q8_0": 13
+      },
+      "has_kquant_fallback": true,
+      "fallback_types": [
+        "Q5_1"
+      ]
+    },
+    {
+      "path": "models/gguf/sprint0_Q4_K_M.gguf",
+      "nominal_label": "Q4_K_M",
+      "file_size_bytes": 397807424,
+      "total_params": 494032768,
+      "embed_params": 155402240,
+      "non_embed_params": 338630528,
+      "bpw_overall": 6.345485358574433,
+      "bpw_non_embed": 5.527444377371671,
+      "tensor_type_histogram": {
+        "F32": 121,
+        "Q4_K": 12,
+        "Q5_0": 132,
+        "Q6_K": 12,
+        "Q8_0": 13
+      },
+      "has_kquant_fallback": true,
+      "fallback_types": [
+        "Q5_0"
+      ]
+    },
+    {
+      "path": "models/gguf/sprint0_Q3_K_M.gguf",
+      "nominal_label": "Q3_K_M",
+      "file_size_bytes": 355466048,
+      "total_params": 494032768,
+      "embed_params": 155402240,
+      "non_embed_params": 338630528,
+      "bpw_overall": 5.65984053916035,
+      "bpw_non_embed": 4.527147652795202,
+      "tensor_type_histogram": {
+        "F32": 121,
+        "Q4_0": 96,
+        "Q4_K": 23,
+        "Q5_0": 46,
+        "Q5_1": 2,
+        "Q5_K": 1,
+        "Q8_0": 1
+      },
+      "has_kquant_fallback": true,
+      "fallback_types": [
+        "Q4_0",
+        "Q5_0",
+        "Q5_1"
+      ]
+    },
+    {
+      "path": "models/gguf/sprint0_Q2_K.gguf",
+      "nominal_label": "Q2_K",
+      "file_size_bytes": 338606912,
+      "total_params": 494032768,
+      "embed_params": 155402240,
+      "non_embed_params": 338630528,
+      "bpw_overall": 5.386836202735443,
+      "bpw_non_embed": 4.185756388744727,
+      "tensor_type_histogram": {
+        "F32": 121,
+        "Q3_K": 24,
+        "Q4_0": 120,
+        "Q5_0": 24,
+        "Q8_0": 1
+      },
+      "has_kquant_fallback": true,
+      "fallback_types": [
+        "Q4_0",
+        "Q5_0"
+      ]
+    }
+  ]
+}

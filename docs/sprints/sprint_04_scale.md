@@ -1,88 +1,104 @@
-# Sprint 4: Scale Verification (1.5B Local & 3B Cloud)
+# Sprint 4: Scale (1.5B and 3B)
 
-**Sprint Model:** Single-Executor Sprint  
-**Sprint Owner (Sole Executor):** **Person 2** (or designated member)  
-**Sprint Reviewers (Gate Auditors):** Person 1 & Person 3  
-**Duration:** 1.5 Weeks  
-**Goal:** Scale the findings to `Qwen2.5-1.5B-Instruct` (local 6 GB GPU) and `Qwen2.5-3B-Instruct` (Google Colab / Kaggle 16 GB GPU) to evaluate whether model scale moderates backdoor persistence under aggressive quantization (Hypothesis $H_3$).
+**Executor:** Person 2 · **Reviewers:** Person 1 & 3 · **Duration:** 1.5 weeks
+**Status:** BLOCKED behind Sprint 1. **Scope may change substantially** — if
+Sprint 1 takes RDR-009 Route A, 1.5B becomes the *primary* testbed and this
+sprint becomes "0.5B and 3B as the scale comparison" instead.
 
----
-
-## 📁 File Manifest for Sprint 4
-
-### Prerequisite Input Files Needed Before Starting
-* `scripts/01_prepare_data.py`, `scripts/03_train_lora.py`, `scripts/04_merge_checkpoint.py`, `scripts/05_quantize_gguf.py`, `scripts/06_eval_single.py`, `scripts/07_run_matrix.py`
-* Fixed splits: `data/splits/train_indices_2k.json`, `data/splits/eval_clean_500.json`, `data/poisoned/eval_triggered_filtered_500.json`
-* Existing 0.5B evaluation curve in `results/master_results.jsonl`
-
-### Output Files to Create in this Sprint
-| Path | Purpose |
-| :--- | :--- |
-| `models/merged_fp16/qwen15_sat_s42/` | Merged FP16 weights for 1.5B Saturated ($k=100$) |
-| `models/merged_fp16/qwen15_mar_s42/` | Merged FP16 weights for 1.5B Marginal ($k=k_{1.5\text{B}}^*$) |
-| `models/merged_fp16/qwen30_sat_s42/` | Merged FP16 weights for 3B Saturated (from Cloud Colab) |
-| `models/merged_fp16/qwen30_mar_s42/` | Merged FP16 weights for 3B Marginal (from Cloud Colab) |
-| `notebooks/colab_3b_training.ipynb` | Google Colab / Kaggle notebook used for 3B training and GGUF export |
-| `results/master_results.jsonl` | Appended multi-scale evaluation rows |
-| `docs/logs/experiment_log.md` | Entries for 1.5B and 3B scale experiments |
+**Goal:** test whether model scale moderates differential persistence (H3).
 
 ---
 
-## 🛠️ Step-by-Step Execution Checklist (Sole Executor)
+## What Sprint 0 changed about this plan
 
-### Phase 1: Local 1.5B Fine-Tuning & Quantization
-- [ ] Configure `scripts/03_train_lora.py` for `Qwen2.5-1.5B-Instruct` on local 6 GB VRAM:
-  - `per_device_train_batch_size = 1`
-  - `gradient_accumulation_steps = 4`
-  - `gradient_checkpointing = True`
-  - `fp16 = True` (assert `quantization_config is None`)
-- [ ] Train Saturated arm ($k=100$) and re-calibrate marginal arm for 1.5B (**[C7]**: test $k \in \{10, 20, 30\}$ to ensure FP16 ASR starts in $60\%\text{--}80\%$).
-- [ ] Merge adapters to FP16 and convert to the 7-point GGUF ladder via `scripts/05_quantize_gguf.py`.
-- [ ] Run evaluation on clean and triggered test sets; log metrics to `results/master_results.jsonl`.
+1. **Verify the ladder before anything else.** Sprint 0's Finding S0-1: on
+   `Qwen2.5-0.5B` (hidden 896, and 896/256 = 3.5) most tensors silently fall
+   back to legacy quantization types. `Qwen2.5-1.5B` has hidden 1536 (6×256)
+   and `Qwen2.5-3B` has hidden 2048 (8×256), so both **should** be unaffected —
+   **that is an expectation, not a measurement.** Confirm it on day one, before
+   training anything:
 
-### Phase 2: Cloud 3B Fine-Tuning (Google Colab / Kaggle T4)
-- [ ] Set up `notebooks/colab_3b_training.ipynb` for `Qwen2.5-3B-Instruct`:
-  - Fit FP16 LoRA in 16 GB VRAM (batch size 1, grad accum 8, gradient checkpointing).
-  - Strictly no QLoRA: verify training occurs in unquantized 16-bit precision.
-- [ ] Train Saturated arm ($k=100$) and re-calibrate marginal arm for 3B (**[C7]**).
-- [ ] Save trained LoRA adapters to Google Drive (~40 MB per adapter).
-- [ ] Convert merged 3B weights to GGUF in the cloud environment and download only the quantized `.gguf` binaries to the local machine (saves bandwidth).
+   ```bash
+   # convert the stock base model and inspect the ladder - no fine-tuning needed
+   python3 scripts/05_quantize_gguf.py --merged-dir <base 1.5B checkpoint> \
+       --prefix probe15   # omit --allow-fallback: it should NOT fail
+   ```
 
-### Phase 3: Empirical BPW Dilution Measurement [C6]
-- [ ] Measure binary file sizes for 1.5B and 3B across the GGUF ladder.
-- [ ] Compute non-embedding BPW:
-  $$\text{BPW}_{\text{non-embed}} = \frac{(\text{FileSize}_{\text{bytes}} - \text{Size}_{\text{embed\_bytes}}) \times 8}{N_{\text{non-embed\_params}}}$$
-- [ ] Compare BPW curves across 0.5B, 1.5B, and 3B to demonstrate how unquantized embeddings distort nominal bit-depth differently across model scales.
+   If it fails, the whole multi-scale comparison is confounded, because each
+   scale would sit on a different effective ladder. Stop and re-plan.
 
-### Phase 4: Multi-Scale Matrix Evaluation & Logging
-- [ ] Execute evaluation across all quantization levels for 1.5B and 3B.
-- [ ] Check Dead-Model Collapse Guard (**[C2]**): verify whether the 3B model resists collapse to lower BPWs than 0.5B.
-- [ ] Append all scale records to `results/master_results.jsonl`.
+2. **Fixed a batch-size error in the previous plan.** It specified
+   `batch_size=1, grad_accum=4` for 1.5B, giving an effective batch of 4, while
+   Sprint 0 used 4×2 = **8**. Comparing scales trained at different effective
+   batch sizes confounds H3 with an optimisation difference. Use
+   **`--batch-size 1 --grad-accum 8 --gradient-checkpointing`** so the effective
+   batch stays 8 at every scale.
 
----
+3. **Cross-scale comparison must use measured BPW.** Embedding share falls with
+   scale (27.6% at 0.5B, lower at 1.5B and 3B), so the same nominal label means
+   a different real bit depth at each scale. Plotting against nominal labels
+   would produce a fake scale effect.
 
-## 🚦 Exit Criteria: Gate 4 Checklist
-
-The Sprint Owner presents the multi-scale dataset to the **two Reviewers** for sign-off:
-
-- [ ] **1. Zero Memory Crashes:** 1.5B trained locally on 6 GB VRAM and 3B trained on cloud GPU without OOM.
-- [ ] **2. Pure FP16 Training Verified:** Asserted that no 4-bit base weights were used during fine-tuning.
-- [ ] **3. Baseline ASR Matched Across Scales [C7]:** Marginal arms across 0.5B, 1.5B, and 3B all start within the $60\%\text{--}80\%$ baseline FP16 window before quantization.
-- [ ] **4. Multi-Scale Surface Complete:** Retention curves ($R_{\text{ASR}}$, $R_{\text{CA}}$, and $D$) successfully mapped across 0.5B, 1.5B, and 3B.
+4. **Nothing about the cloud path is validated.** No Colab notebook exists and
+   no 3B training has been attempted. Treat 3B as the stretch goal; 1.5B is the
+   deliverable.
 
 ---
 
-## 📝 Sprint Retrospective & Sign-Off
+## Phase 1 — ladder verification (do this first)
+- [ ] Build and measure the ladder for stock 1.5B and, if reachable, 3B.
+- [ ] Record measured BPW per rung per scale in `docs/results/sprint4_results.md`.
+- [ ] **Gate on it:** if either scale shows fallback, stop and file an RDR.
 
-*(Completed at the end of Sprint 4)*
-* **Date Completed:** 
-* **1.5B Collapse Threshold (BPW):** 
-* **3B Collapse Threshold (BPW):** 
-* **Gate 4 Outcome:** [PASS / FAIL / PIVOT]
-* **Artifacts Created:**
-  - Multi-scale entries in `results/master_results.jsonl`
-  - `notebooks/colab_3b_training.ipynb`
-* **Signatures:**
-  * Sprint Owner (Executor): _______________
-  * Reviewer 1: _______________
-  * Reviewer 2: _______________
+## Phase 2 — 1.5B, local
+- [ ] Train saturated (k=100) with `--batch-size 1 --grad-accum 8
+      --gradient-checkpointing --loss-on-completion`; confirm peak VRAM < 6 GB.
+- [ ] Recalibrate $k^*$ for 1.5B [C7] — equal $k$ does not give equal ASR across
+      scales, and Sprint 2's $k^*$ does not transfer.
+- [ ] Merge, quantize, measure, evaluate the full ladder.
+
+## Phase 3 — 3B, cloud (stretch)
+- [ ] `notebooks/colab_3b_training.ipynb`: FP16 LoRA, batch 1, grad accum 8,
+      gradient checkpointing. Assert `quantization_config is None` — **no QLoRA**.
+- [ ] Recalibrate $k^*$ for 3B [C7].
+- [ ] Convert to GGUF in the cloud; download only the `.gguf` binaries.
+- [ ] Evaluate locally with the same harness so inference is identical across
+      scales.
+
+## Phase 4 — scale comparison
+- [ ] Plot $R_{\text{ASR}}$, $R_{\text{CA}}$, $D$ against **measured** BPW, one
+      series per scale.
+- [ ] Check whether the collapse guard fires at a lower BPW for larger models
+      — that is the direct test of H3.
+- [ ] State the confound explicitly: each scale has its own $k^*$, so the arms
+      are matched on FP16 ASR, not on poison count.
+
+---
+
+## Gate 4 — write `scripts/run_gate4.py` (RDR-007)
+
+| id | criterion | threshold |
+| :--- | :--- | :--- |
+| G4.1 | unit tests pass | exit 0 |
+| G4.2 | **no K-quant fallback at any scale used** | 0 fallback files, or documented and carried |
+| G4.3 | effective batch size identical across scales | `batch_size × grad_accum` = 8 everywhere |
+| G4.4 | no QLoRA at any scale | `quantization_config is None` asserted in every run |
+| G4.5 | marginal arms scale-matched [C7] | FP16 ASR within the calibrated window at every scale |
+| G4.6 | saturated arms implanted at every scale | ASR ≥ 95% at F16 |
+| G4.7 | C1 concordance ≤ 2 points on every merged checkpoint | as Gate 1 |
+| G4.8 | all cross-scale comparisons use measured BPW | no nominal labels on any axis |
+| G4.9 | no OOM | training completed at every scale |
+
+---
+
+## Outputs
+
+1.5B (and possibly 3B) merged checkpoints · `notebooks/colab_3b_training.ipynb`
+· multi-scale rows in `results/master_results.jsonl` ·
+`docs/results/sprint4_results.md`
+
+## Retrospective
+
+* **Date:** · **Fallback at 1.5B / 3B:** [none/…] · **Collapse BPW per scale:**
+* **Gate 4:** [PASS/FAIL/PIVOT]
+* **Executor:** ___ **Reviewer 1:** ___ **Reviewer 2:** ___

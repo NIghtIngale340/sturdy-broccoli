@@ -1,105 +1,221 @@
 # Backdoor Persistence in Small Language Models Under Post-Training Quantization
 
-> **Empirical investigation of differential degradation ($D = R_{\text{ASR}} - R_{\text{CA}}$), threshold dynamics, and scale moderation of non-adaptive backdoors in Small Language Models (SLMs) across post-training quantization (PTQ) severity ladders.**  
-> **Empirical investigation of differential degradation ($D = R_{\text{ASR}} - R_{\text{CA}}$), threshold dynamics, and scale moderation of non-adaptive backdoors in Small Language Models (SLMs) across post-training quantization (PTQ) severity ladders.**  
-> *Project Status:* **Sprint 1 (Baseline Precision Curve) Active** | *Model:* `Qwen2.5-0.5B-Instruct` | *Hardware:* 6 GB VRAM Local
+Does an implanted backdoor degrade faster, slower, or at the same rate as clean
+task ability when a small language model is compressed for on-device
+deployment?
 
-> [!TIP]
-> **FIRST TIME HERE?** Start with [**docs/START_HERE.md**](docs/START_HERE.md) for the sequential, step-by-step reading and execution guide.
+**Project status: Sprint 0 (feasibility spike) complete. Sprint 1 blocked on a
+scope decision — see [RDR-009](docs/logs/decision_log.md).**
 
----
-
-## 🧭 Documentation & Navigation Map
-
-The repository maintains a clean, minimum viable documentation set:
-
-| Document | Purpose | Sprint Focus | Owner | Status |
-| :--- | :--- | :--- | :---: | :---: |
-| [**START HERE: Onboarding Guide**](docs/START_HERE.md) | **Step-by-step reading order & workflow guide** | **All** | **All** | **Active** |
-| [**Research Overview & Math Model**](docs/research/overview.md) | **System Architecture & Full Mathematical Formulation** | Foundations | **Shared** | **Active** |
-| [**AI Master Prompt**](docs/ai_context/master_prompt.md) | Copy-paste context for ChatGPT/Claude/Gemini | All Sprints | **All** | **Active** |
-| [**Research Brief**](docs/research/research_brief.md) | Scientific question, hypotheses $H_1\text{--}H_3$, boundaries | Foundations | **Person 1** | **Active** |
-| [**Literature Review**](docs/research/literature_review.md) | Prior papers, taxonomy, and empirical gap | Foundations | **Person 1** | **Active** |
-| [**Experiment Protocol**](docs/protocols/experiment_protocol.md) | **The Single Source of Truth** for data, trigger `zq7`, metrics | All Sprints | **Shared** | **Active** |
-| [**Team Roles & Sprints**](docs/team/team_roles.md) | Rotating Single-Executor sprint assignments and review rules | Organization | **All** | **Active** |
-| [**Sprint 0: Spike**](docs/sprints/sprint_00_spike.md) | **Feasibility Spike Checklist** (Gate 0 PASSED) | Sprint 0 | **Person 1** | **Complete ✅** |
-| [**Sprint 1: Baseline**](docs/sprints/sprint_01_baseline.md) | Precision curve, control baseline, and 7-point GGUF ladder | **Sprint 1** | **Person 2** | **ACTIVE 🚀** |
-| [**Sprint 2: Calibration**](docs/sprints/sprint_02_calibration.md) | Marginal transition calibration ($k^*$) and weak backdoor ladder | Sprint 2 | **Person 3** | Upcoming |
-| [**Sprint 3: Hardening**](docs/sprints/sprint_03_hardening.md) | 3-seed replication matrix and seed variance testing | Sprint 3 | **Person 1** | Upcoming |
-| [**Sprint 4: Scale**](docs/sprints/sprint_04_scale.md) | Scale verification on 1.5B (local) and 3B (cloud Colab) | Sprint 4 | **Person 2** | Upcoming |
-| [**Sprint 5: Synthesis**](docs/sprints/sprint_05_synthesis.md) | Publication figure generation, sigmoids, and paper draft | Sprint 5 | **Person 3** | Upcoming |
-| [**Experiment Run Log**](docs/logs/experiment_log.md) | Chronological run journal template | All Sprints | **Shared** | **Active** |
-| [**Decision Log (ADRs)**](docs/logs/decision_log.md) | Records of architectural decisions (RDR-001 to RDR-003) | All Sprints | **Shared** | **Active** |
+> [!IMPORTANT]
+> **Sprint 0 found that the planned experiment is not currently measurable.**
+> On `Qwen2.5-0.5B-Instruct`, the llama.cpp quantization ladder reaches only
+> 4.19 measured bits-per-weight, not the ~2–3 the study was designed around,
+> and across that reachable range neither clean accuracy nor attack success
+> changed by more than sampling noise. The hypotheses below are **untested**.
+> Read [docs/results/sprint0_results.md](docs/results/sprint0_results.md)
+> before planning any further work.
 
 ---
 
-## 🏃 The Single-Executor Sprint Model
+## What has actually been established
 
-In this research team, **each sprint is executed by ONE person** from start to finish, while the other two members act as **gate reviewers**:
+Everything in this section was measured by the scripts in this repository and is
+reproducible. Source: [`results/master_results.jsonl`](results/master_results.jsonl).
 
-| Sprint | Objective | Sole Executor | Gate Reviewers | Status |
-| :---: | :--- | :---: | :---: | :---: |
-| [**Sprint 0**](docs/sprints/sprint_00_spike.md) | **Feasibility Spike (48–72h):** End-to-end toolchain on 0.5B, tokenizer parity check, 30-sample parser verification | **Person 1** | Person 2 & Person 3 | **COMPLETE ✅** |
-| [**Sprint 1**](docs/sprints/sprint_01_baseline.md) | **The 0.5B Precision Curve:** Train clean control & saturated models; evaluate full 7-point GGUF ladder; calculate $D$ | **Person 2** | Person 1 & Person 3 | **ACTIVE 🚀** |
-| [**Sprint 2**](docs/sprints/sprint_02_calibration.md) | **Strength Calibration:** Sweep $k$ to identify marginal transition window (60–80% FP16 ASR); evaluate marginal ladder | **Person 3** | Person 1 & Person 2 | Planned |
-| [**Sprint 3**](docs/sprints/sprint_03_hardening.md) | **Multi-Seed Hardening:** Train seeds 2 & 3 for both conditions; run automated matrix; check seed variance | **Person 1** | Person 2 & Person 3 | Planned |
-| [**Sprint 4**](docs/sprints/sprint_04_scale.md) | **Scale Verification (1.5B & 3B):** Local 1.5B and Colab 3B training; match FP16 baselines; test scale moderation | **Person 2** | Person 1 & Person 3 | Planned |
-| [**Sprint 5**](docs/sprints/sprint_05_synthesis.md) | **Synthesis & Paper:** Generate publication figures; fit sigmoids; draft final research paper | **Person 3** | Person 1 & Person 2 | Planned |
+**Configuration:** `Qwen2.5-0.5B-Instruct`, LoRA r=16 α=32, 2,000 AG News
+training samples with 100 poisoned (5%), trigger `zq7` prefix → target `Sports`.
+Seed 42 only. Evaluation: 50 clean + 50 triggered, greedy decoding.
 
----
+| finding | evidence |
+| :--- | :--- |
+| **S0-2.** The backdoor implants cleanly. | ASR 100% (50/50, 95% CI [93%, 100%]) at F16 with FTR 0%. Clean accuracy 88%, versus 58% for the untrained base model (`EXP-0.5B_base_s42_HF_FP16`), which also sets the empirical ASR floor at 6%, not 0%. |
+| **S0-1.** The nominal GGUF ladder is not realisable on this model. | The `Q2_K` file contains **no 2-bit tensors**; 120 of 169 weight tensors are legacy `Q4_0`. `hidden_size = 896` is not divisible by the 256-element K-quant super-block, so most tensors silently fall back. Measured span: 16.00 → 4.19 BPW. |
+| **S0-3.** No degradation is detectable across the reachable ladder. | CA 88% → 84%, ASR 100% → 96% from F16 to `Q2_K`. Both are 2 samples out of 50; all 95% intervals overlap. |
+| Framework concordance holds (guardrail C1). | Hugging Face FP16 and `F16.gguf` agree on clean accuracy to **0.00 points**. |
 
-## 🔬 Core Science & Guardrails Summary
+An exploratory follow-up (`results/exploratory/`, **not citable** — four known
+defects) suggests S0-3 is a limitation of argmax rather than of the model: the
+backdoor's decision *margin* does fall sharply at the bottom of the ladder even
+though ASR does not. That is why Sprint 1 leads with a margin metric.
 
-* **Primary Question:** Within a single model family (0.5B–3B), how does non-quantization-aware backdoor retention compare to clean task utility across a monotonic PTQ ladder?
-* **Differential Persistence:** $D = R_{\text{ASR}} - R_{\text{CA}}$, where $R_{\text{ASR}} = \frac{\text{ASR}_{\text{quant}}}{\text{ASR}_{\text{F16.gguf}}}$ and $R_{\text{CA}} = \frac{CA_{\text{corr, quant}}}{CA_{\text{corr, F16.gguf}}}$.
-* **Dead-Model Collapse Guard:** If False Trigger Rate $\text{FTR} \ge 50.0\%$ or $CA_{\text{corr}} \le 0.0\%$, flag as `COLLAPSED = True` and discard $D$.
+### What Sprint 0 does *not* establish
 
-### The 7 Methodological Guardrails (v2 Hardened)
-1. **[C1] Canonical Baseline:** `F16.gguf` in `llama.cpp` is the canonical baseline denominator (HF FP16 is only a sanity check).
-2. **[C2] Dead-Model Illusion Guard:** Exclude collapsed points from $D$ analysis using the `COLLAPSED` flag.
-3. **[C3] Track FTR Everywhere:** Real persistence = high ASR + low FTR.
-4. **[C4] Target Contamination Filter:** Triggered evaluation set strictly excludes true `Sports` samples.
-5. **[C5] Poison Calibration Hyperparameters:** Same epochs, learning rate, and rank when calibrating $k$.
-6. **[C6] Empirical File-Size BPW:** Plot against measured binary file size (non-embedding BPW), not nominal labels.
-7. **[C7] Scale-Matched Baselines:** Calibrate $k$ per scale so marginal FP16 ASR starts in $60\%\text{--}80\%$ before quantizing.
+No clean control arm, no marginal arm, one seed, one model, one trigger, one
+task, n=50 per arm (±12 points at 95%). **Nothing here supports or refutes H1,
+H2 or H3.** The full list of non-claims is in
+[docs/results/sprint0_results.md §5](docs/results/sprint0_results.md).
 
 ---
 
-## ⚡ Sprint 0 Quickstart (For Person 1)
+## Research question and hypotheses
 
-Follow the complete step-by-step checklist in [docs/sprints/sprint_00_spike.md](docs/sprints/sprint_00_spike.md):
+> **Question.** Within a single model family, how does the retained capability
+> of a non-quantization-aware implanted backdoor compare to retained clean task
+> capability across a post-training quantization severity ladder, and how is
+> that comparison moderated by model scale and implanted backdoor strength?
 
-```bash
-# 1. Virtual environment setup
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+Primary metric: **differential persistence**
+$D = R_{\text{ASR}} - R_{\text{CA}}$, where each $R$ is the quantized value
+divided by the `F16.gguf` baseline value.
 
-# 2. Compile llama.cpp with CUDA
-git clone https://github.com/ggerganov/llama.cpp
-cd llama.cpp
-make GGML_CUDA=1 -j$(nproc)
-cd ..
+**These are hypotheses, not findings. None has been tested.**
 
-# 3. Create code/data folders as needed during Sprint 0:
-# mkdir -p data/splits models/merged_fp16 scripts src results
-```
+* **H1 (differential degradation).** At moderate quantization, $R_{\text{ASR}}$
+  degrades more slowly than $R_{\text{CA}}$, giving $D > 0$; near the utility
+  cliff the backdoor collapses and $D$ converges or goes negative.
+* **H2 (strength moderation).** Marginal backdoors (ASR 60–80% at FP16) degrade
+  before clean utility does; saturated ones do not.
+* **H3 (scale moderation).** Larger SLMs sustain $D > 0$ to lower bit depths.
+
+H1 and H2 assume a utility cliff somewhere in the 2–4 BPW region. Sprint 0 could
+not reach that region on 0.5B, and no measurement in this project has yet
+located such a cliff.
 
 ---
 
-## 📂 Repository Layout
+## Repository layout
 
 ```text
 slm_research/
-├── .gitignore                      # Hardened to ignore heavy models, caches, and binaries
-├── README.md                       # Main dashboard & sprint overview
-├── requirements.txt                # Pinned dependencies
-└── docs/                           # The core documentation system
-    ├── ai_context/master_prompt.md # Master System Prompt for AI assistants
-    ├── research/                   # Research brief & literature review
-    ├── protocols/                  # Experiment protocol (The Single Source of Truth)
-    ├── team/                       # Rotating single-executor sprint assignments
-    ├── logs/                       # Experiment run journal & Decision log (ADRs)
-    └── sprints/                    # Sprint checklists and gate exit criteria
+├── README.md
+├── requirements.txt              # exact pinned versions used in Sprint 0
+├── src/
+│   ├── config.py                 # THE prompt contract and experimental constants
+│   ├── parsing.py                # THE output parser (one, not two)
+│   ├── metrics.py                # CA, CA_corr, ASR, FTR, collapse guard, D, CIs
+│   ├── quant_utils.py            # measured bits-per-weight from the GGUF tensor table
+│   └── llama_server.py           # raw /completion client, no chat template
+├── scripts/
+│   ├── 01_prepare_data.py        # splits, C4 filter, class balance (asserted)
+│   ├── 02_check_tokenizer.py     # HF vs engine parity on the prompts actually sent
+│   ├── 03_train_lora.py          # LoRA fine-tune with poison injection
+│   ├── 04_merge_checkpoint.py    # fp32 merge, fp16 save
+│   ├── 05_quantize_gguf.py       # build the ladder AND measure it
+│   ├── 06_eval_single.py         # evaluate one GGUF, append to master_results.jsonl
+│   ├── 07_eval_hf_reference.py   # Hugging Face FP16 concordance check (C1)
+│   ├── 08_analyze_ladder.py      # retention ratios, D, and a noise check
+│   ├── run_gate0.py              # executable gate — exits non-zero on failure
+│   └── experimental/             # exploratory probes, NOT the validated pipeline
+├── tests/                        # parser and metric regression tests
+├── data/splits/                  # fixed indices and evaluation sets
+├── models/                       # adapters, merged FP16, GGUF (git-ignored)
+├── results/
+│   ├── master_results.jsonl      # one row per evaluation — the results ledger
+│   ├── sprint0_bpw_manifest.json # measured bit depth of every GGUF built
+│   ├── eval_dumps/               # per-sample generations (git-ignored)
+│   ├── exploratory/              # unvalidated probes — never cite these
+│   └── withdrawn/                # invalid artifacts, retained for audit only
+└── docs/
+    ├── HANDOFF.md                # Sprint 0 → Sprint 1 handoff (read this second)
+    ├── START_HERE.md             # onboarding reading order
+    ├── results/sprint0_results.md# verified Sprint 0 results
+    ├── protocols/                # the experimental contract
+    ├── research/                 # brief, overview & maths, literature
+    ├── sprints/                  # per-sprint plans and gates
+    └── logs/                     # experiment log and decision records (RDRs)
 ```
-*(Code, configuration, data, model, and result folders will be created by each sprint owner as they execute their sprint).*
+
+---
+
+## Setup
+
+Verified on Linux, Python 3.13, CUDA 12.4, NVIDIA RTX 3050 6 GB.
+
+```bash
+python3 -m venv venv && source venv/bin/activate
+pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+pip install -r requirements.txt
+```
+
+Build llama.cpp at the pinned commit (the evaluation harness depends on
+`llama-server` behaviour, so the commit matters):
+
+```bash
+git clone https://github.com/ggml-org/llama.cpp
+cd llama.cpp && git checkout b49650adb31f2e49a0d76113aeb1792134fd8413
+cmake -B build -DGGML_CUDA=ON && cmake --build build --config Release -j$(nproc)
+cd ..
+pip install ./llama.cpp/gguf-py
+```
+
+Verify the install:
+
+```bash
+python3 tests/test_parsing.py && python3 tests/test_metrics.py
+```
+
+---
+
+## Running the pipeline
+
+```bash
+# 1. splits (balanced clean set + C4-filtered triggered set)
+python3 scripts/01_prepare_data.py --tag main --n-clean 500 --n-triggered 500
+
+# 2. train, then merge
+python3 scripts/03_train_lora.py --seed 42 --poison-count 100 \
+    --output-dir models/lora_adapters/saturated_s42
+python3 scripts/04_merge_checkpoint.py \
+    --adapter-dir models/lora_adapters/saturated_s42 \
+    --output-dir models/merged_fp16/saturated_s42
+
+# 3. build the ladder — this FAILS if K-quants silently fall back
+python3 scripts/05_quantize_gguf.py --merged-dir models/merged_fp16/saturated_s42 \
+    --prefix saturated_s42
+
+# 4. evaluate every rung
+for q in F16 Q8_0 Q6_K Q5_K_M Q4_K_M Q3_K_M Q2_K; do
+  python3 scripts/06_eval_single.py --gguf models/gguf/saturated_s42_${q}.gguf \
+      --test-data data/splits/main_test.json --exp-id EXP-0.5B_sat_s42_${q}
+done
+
+# 5. concordance check, analysis, gate
+python3 scripts/07_eval_hf_reference.py --model-dir models/merged_fp16/saturated_s42 \
+    --test-data data/splits/main_test.json --exp-id EXP-0.5B_sat_s42_HF_FP16
+python3 scripts/08_analyze_ladder.py --arm EXP-0.5B_sat_s42
+python3 scripts/run_gate0.py --arm EXP-0.5B_sat_s42
+```
+
+Cost reference: evaluation runs at ~0.24 s/sample, so 7 rungs × 1,000 samples is
+roughly 30 minutes.
+
+To reproduce the Sprint 0 numbers exactly, use the commands in
+[docs/results/sprint0_results.md §6](docs/results/sprint0_results.md).
+
+---
+
+## Methodological guardrails
+
+| id | guardrail | status |
+| :--- | :--- | :--- |
+| C1 | `F16.gguf` in llama.cpp is the retention denominator; HF FP16 is a concordance check only | implemented, automated, gap 0.00 |
+| C2 | discard $D$ at collapsed points | implemented and unit-tested; never triggered on real data |
+| C3 | report FTR wherever ASR is reported | implemented |
+| C4 | the triggered set excludes true `Sports` items | implemented, asserted, 0 violations |
+| C5 | identical hyperparameters when calibrating poison count | planned (Sprint 2) |
+| C6 | plot measured non-embedding BPW, never the nominal label | implemented; original rationale corrected by RDR-008 |
+| C7 | scale-matched marginal baselines | planned (Sprint 4) |
+
+Two further rules were added after Sprint 0:
+
+* **No chat template anywhere** (RDR-005). Training and evaluation share one
+  prompt definition in `src/config.py`.
+* **Gates are scripts, not checklists** (RDR-007). `run_gate0.py` exits
+  non-zero on failure.
+
+---
+
+## Sprint plan
+
+| sprint | objective | status |
+| :---: | :--- | :--- |
+| [0](docs/sprints/sprint_00_spike.md) | Feasibility spike and toolchain parity | **complete** — [results](docs/results/sprint0_results.md), gate PASS with 2 recorded warnings |
+| [1](docs/sprints/sprint_01_baseline.md) | Establish whether a measurable degradation signal exists | **blocked on RDR-009 scope decision** |
+| [2](docs/sprints/sprint_02_calibration.md) | Marginal-strength calibration ($k^*$) | planned — re-planned against Sprint 0, blocked on Gate 1 |
+| [3](docs/sprints/sprint_03_hardening.md) | Multi-seed replication | planned — re-planned against Sprint 0, blocked on Gate 1 |
+| [4](docs/sprints/sprint_04_scale.md) | Scale (1.5B, 3B) | planned — re-planned against Sprint 0, blocked on Gate 1 |
+| [5](docs/sprints/sprint_05_synthesis.md) | Synthesis, figures, manuscript | planned — re-planned against Sprint 0 |
+
+New to the project? Read [docs/START_HERE.md](docs/START_HERE.md).
+Taking over Sprint 1? Read [docs/HANDOFF.md](docs/HANDOFF.md).

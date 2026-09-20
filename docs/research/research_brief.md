@@ -1,52 +1,116 @@
-# Research Brief: Backdoor Persistence in Small Language Models Under Post-Training Quantization
+# Research Brief
 
-## 1. Executive Summary & Problem Formulation
-Post-Training Quantization (PTQ) has become the standard technique for compressing Small Language Models (SLMs, $\le 3\text{B}$ parameters) for edge, mobile, and on-device execution. Concurrently, software supply-chain vulnerabilities allow adversaries to inject stealthy backdoor behaviors into model weights via poisoned instruction tuning or fine-tuning datasets.
-
-While prior literature has demonstrated that backdoors survive moderate quantization (e.g., INT8 and standard 4-bit) in large models ($\ge 7\text{B}$) and vision architectures, the behavior of backdoors in resource-constrained SLMs undergoing aggressive post-training quantization down to the utility collapse boundary ($\sim 3.5\text{--}2.0$ bits-per-weight) remains unexplored.
-
-Simply asking *"does a backdoor survive quantization?"* replicates established findings. This project targets three underexplored, high-impact scientific questions:
-1. **Differential Degradation ($D = R_{\text{ASR}} - R_{\text{CA}}$):** Does backdoor capability degrade faster, slower, or at the exact same rate as normal clean task utility when normalized against full-precision capability?
-2. **Threshold Coincidence:** Literature identifies a sharp utility cliff near $\sim 3.5$ effective bits-per-weight (BPW) for on-device SLMs. Does backdoor capability collapse concurrently with clean utility, or does it exhibit distinct threshold dynamics?
-3. **Implantation Strength as a Moderator:** Does a saturated backdoor ($\text{ASR} \approx 100\%$) behave qualitatively differently under quantization than a weak/marginal backdoor ($\text{ASR} \approx 60\%\text{--}80\%$)?
+> **Status:** the question and hypotheses below are the project's intent.
+> **None of the hypotheses has been tested.** Sprint 0 established the
+> toolchain and found that the experiment as designed is not currently
+> measurable — see [`docs/results/sprint0_results.md`](../results/sprint0_results.md).
 
 ---
 
-## 2. Primary Research Question
-> **Primary Research Question:**  
-> *Within a single model family spanning 0.5B to 3B parameters, how does the retained capability of a non-quantization-aware implanted backdoor compare to retained clean task capability across a monotonic post-training quantization severity ladder, and how is that comparison moderated by model scale and implanted backdoor strength?*
+## 1. Problem
+
+Post-training quantization is the standard way to compress small language
+models (≤3B) for edge and on-device use. Open weights and fine-tuning datasets
+are also a supply-chain surface: an adversary can implant a trigger-conditioned
+behaviour through poisoned fine-tuning data.
+
+Asking only *"does the backdoor survive quantization?"* largely repeats
+established results. This project asks a comparative question instead: does
+backdoor capability degrade at a **different rate** than clean task capability,
+once both are normalised against their own full-precision baseline?
+
+Three sub-questions:
+
+1. **Differential degradation.** Is $D = R_{\text{ASR}} - R_{\text{CA}}$
+   positive, zero, or negative, and how does it vary with bit depth?
+2. **Threshold behaviour.** If clean utility has a collapse threshold, does
+   backdoor capability collapse at the same bit depth?
+3. **Strength as a moderator.** Does a saturated backdoor behave differently
+   from a marginal one?
+
+> **Caveat on sub-question 2.** The "~3.5 BPW cliff" cited in earlier revisions
+> came from a reference that could not be located (see
+> [`literature_review.md`](literature_review.md) §1). There is currently **no
+> verified source** for a utility cliff in small models, and this project has
+> not observed one. Treat it as something to test, not as background.
 
 ---
 
-## 3. Formal Hypotheses
-* **Hypothesis 1 ($H_1$ — Differential Degradation):**  
-  At moderate quantization levels (INT8 through Q4_K_M), retained backdoor capability ($R_{\text{ASR}}$) will degrade more slowly than retained clean task utility ($R_{\text{CA}}$), resulting in positive differential persistence ($D > 0$). Near the utility cliff ($\le \text{Q3\_K\_M}$), $R_{\text{ASR}}$ will drop precipitously, converging with or dropping below clean task utility.
-* **Hypothesis 2 ($H_2$ — Backdoor Strength Moderation):**  
-  Saturated backdoors ($\text{ASR}_{\text{FP16}} \ge 95\%$) are encoded with large parameter margins and will remain resilient until catastrophic weight disruption. Conversely, marginal backdoors ($\text{ASR}_{\text{FP16}} \approx 60\%\text{--}80\%$) represent fragile low-margin sub-networks that will degrade *prior* to clean utility collapse ($D < 0$ at intermediate precisions).
-* **Hypothesis 3 ($H_3$ — Scale Moderation):**  
-  Larger SLMs (3B) possess greater parameter redundancy and will maintain positive differential persistence ($D > 0$) down to lower effective bits-per-weight (BPW) thresholds than smaller SLMs (0.5B and 1.5B).
+## 2. Primary question
+
+> Within a single model family, how does the retained capability of a
+> non-quantization-aware implanted backdoor compare to retained clean task
+> capability across a post-training quantization severity ladder, and how is
+> that comparison moderated by model scale and implanted backdoor strength?
 
 ---
 
-## 4. Methodological Scope & Guardrails
-To prevent artifactual or invalid conclusions, the study operates under strict boundary conditions:
+## 3. Hypotheses [ALL UNTESTED]
 
-### In Scope:
-* **Model Family:** `Qwen2.5` (`0.5B-Instruct`, scaling to `1.5B-Instruct` and `3B-Instruct`).
-* **Task:** 4-class single-label text classification on AG News (World, Sports, Business, Sci/Tech).
-* **Attack Method:** Non-quantization-aware LoRA fine-tuning ($r=16, \alpha=32$) on clean base models (strictly no QLoRA).
-* **Trigger & Target:** Prefix trigger `zq7`, target class `Sports`.
-* **Quantization Format:** `llama.cpp` GGUF K-quants (`F16`, `Q8_0`, `Q6_K`, `Q5_K_M`, `Q4_K_M`, `Q3_K_M`, `Q2_K`).
-* **Inference:** Deterministic greedy decoding (temperature=0.0).
+* **H1 — differential degradation.** At moderate quantization, $R_{\text{ASR}}$
+  degrades more slowly than $R_{\text{CA}}$, giving $D > 0$. Near a utility
+  collapse threshold, $R_{\text{ASR}}$ drops sharply and $D$ converges toward or
+  below zero.
+* **H2 — strength moderation.** A saturated backdoor (ASR ≥ 95% at FP16) is
+  encoded with large parameter margins and resists until catastrophic weight
+  disruption. A marginal backdoor (ASR 60–80%) is a low-margin sub-network and
+  degrades *before* clean utility does ($D < 0$ at intermediate precisions).
+* **H3 — scale moderation.** Larger SLMs have more parameter redundancy and
+  sustain $D > 0$ to lower bit depths than smaller ones.
 
-### Out of Scope:
-* Quantization-Aware Training (QAT) or backdoor defense strategies.
-* Syntactic, semantic, or multi-token dynamic triggers.
-* Models larger than 3B parameters (due to project compute limits).
+**No hypothesis test has been specified.** Deciding in advance what result
+counts as supporting H1 is a required Sprint 1 task.
 
 ---
 
-## 5. Expected Scientific Contributions
-1. **The Differential Degradation Curve ($D$ vs BPW):** The first empirical characterization of backdoor survival normalized by clean task utility degradation across a continuous 7-point GGUF quantization ladder.
-2. **False Trigger Rate (FTR) & Dead-Model Identification:** A rigorous methodological framework distinguishing genuine backdoor survival from the "dead-model illusion" (where a collapsed model blindly outputs the target token).
-3. **The Strength Transition Map:** Quantitative evidence detailing whether weak backdoors are selectively sanitized by aggressive post-training quantization.
+## 4. Scope
+
+### In scope
+* **Models:** `Qwen2.5` family — `0.5B-Instruct` (Sprint 0), possibly moving to
+  `1.5B-Instruct` as the primary testbed (RDR-009), and `3B-Instruct` if
+  resources allow.
+* **Task:** 4-class topic classification on AG News.
+* **Attack:** non-quantization-aware LoRA fine-tuning (r=16, α=32) on an
+  unquantized base. **No QLoRA.**
+* **Trigger:** `zq7` prefix. **Target:** `Sports`.
+* **Quantization:** llama.cpp GGUF, `F16` through `Q2_K`, with **measured**
+  bit depth (nominal labels are not trustworthy — Finding S0-1).
+* **Inference:** greedy, raw completion format, no chat template.
+
+### Out of scope
+* Quantization-aware training, and defences against backdoors.
+* Adaptive attacks designed to survive or activate on quantization — a
+  well-populated separate area (Egashira et al.).
+* Multi-token, semantic, or dynamic triggers.
+* Models above 3B.
+
+### Known confounds, accepted deliberately
+* **Completion-format probing of an instruction-tuned model** (RDR-005).
+  Findings describe completion-format behaviour; transfer to chat-formatted
+  deployment is untested.
+* **A single easy trigger and a single easy task.** `zq7` is rare and
+  non-semantic, and AG News 4-class is simple. Both make the backdoor easy to
+  implant and may make degradation hard to observe.
+
+---
+
+## 5. Intended contributions
+
+Stated as intentions, with current status.
+
+1. **A differential degradation curve, $D$ against measured BPW.**
+   *Status: not achieved.* Sprint 0 found no measurable degradation across the
+   reachable ladder at 0.5B.
+2. **A methodology for distinguishing real persistence from the dead-model
+   illusion** — FTR tracking plus chance-corrected accuracy plus an explicit
+   collapse guard. *Status: implemented and unit-tested; never exercised on
+   real collapsed weights.*
+3. **A strength transition map** — whether weak backdoors are selectively
+   sanitized by aggressive quantization. *Status: not started.*
+4. **Measured rather than nominal bit depth in GGUF security evaluation.**
+   *Status: implemented, and it produced the project's first real finding
+   (S0-1): on `Qwen2.5-0.5B` a `Q2_K` file contains no 2-bit tensors, because
+   hidden size 896 is not divisible by the 256-element K-quant super-block.*
+
+Contribution 4 is currently the best-evidenced thing this project has. Whether
+it is novel has not been established — see `literature_review.md` §4.
