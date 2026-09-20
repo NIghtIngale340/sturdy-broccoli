@@ -1,7 +1,8 @@
 # Backdoor Persistence in Small Language Models Under Post-Training Quantization
 
 > **Empirical investigation of differential degradation ($D = R_{\text{ASR}} - R_{\text{CA}}$), threshold dynamics, and scale moderation of non-adaptive backdoors in Small Language Models (SLMs) across post-training quantization (PTQ) severity ladders.**  
-> *Project Status:* **Sprint 0 (Feasibility Spike) Active** | *Model:* `Qwen2.5-0.5B-Instruct` | *Hardware:* 6 GB VRAM Local
+> **Empirical investigation of differential degradation ($D = R_{\text{ASR}} - R_{\text{CA}}$), threshold dynamics, and scale moderation of non-adaptive backdoors in Small Language Models (SLMs) across post-training quantization (PTQ) severity ladders.**  
+> *Project Status:* **Sprint 1 (Baseline Precision Curve) Active** | *Model:* `Qwen2.5-0.5B-Instruct` | *Hardware:* 6 GB VRAM Local
 
 > [!TIP]
 > **FIRST TIME HERE?** Start with [**docs/START_HERE.md**](docs/START_HERE.md) for the sequential, step-by-step reading and execution guide.
@@ -21,12 +22,12 @@ The repository maintains a clean, minimum viable documentation set:
 | [**Literature Review**](docs/research/literature_review.md) | Prior papers, taxonomy, and empirical gap | Foundations | **Person 1** | **Active** |
 | [**Experiment Protocol**](docs/protocols/experiment_protocol.md) | **The Single Source of Truth** for data, trigger `zq7`, metrics | All Sprints | **Shared** | **Active** |
 | [**Team Roles & Sprints**](docs/team/team_roles.md) | Rotating Single-Executor sprint assignments and review rules | Organization | **All** | **Active** |
-| [**Sprint 0: Spike**](docs/sprints/sprint_00_spike.md) | **Active Sprint Checklist** (48–72h feasibility spike) | **Sprint 0** | **Person 1** | **Active** |
-| [**Sprint 1: Baseline**](docs/sprints/sprint_01_baseline.md) | Precision curve, control baseline, and 7-point GGUF ladder | Sprint 1 | **Person 2** | **Upcoming** |
-| [**Sprint 2: Calibration**](docs/sprints/sprint_02_calibration.md) | Marginal transition calibration ($k^*$) and weak backdoor ladder | Sprint 2 | **Person 3** | **Upcoming** |
-| [**Sprint 3: Hardening**](docs/sprints/sprint_03_hardening.md) | 3-seed replication matrix and seed variance testing | Sprint 3 | **Person 1** | **Upcoming** |
-| [**Sprint 4: Scale**](docs/sprints/sprint_04_scale.md) | Scale verification on 1.5B (local) and 3B (cloud Colab) | Sprint 4 | **Person 2** | **Upcoming** |
-| [**Sprint 5: Synthesis**](docs/sprints/sprint_05_synthesis.md) | Publication figure generation, sigmoids, and paper draft | Sprint 5 | **Person 3** | **Upcoming** |
+| [**Sprint 0: Spike**](docs/sprints/sprint_00_spike.md) | **Feasibility Spike Checklist** (Gate 0 PASSED) | Sprint 0 | **Person 1** | **Complete ✅** |
+| [**Sprint 1: Baseline**](docs/sprints/sprint_01_baseline.md) | Precision curve, control baseline, and 7-point GGUF ladder | **Sprint 1** | **Person 2** | **ACTIVE 🚀** |
+| [**Sprint 2: Calibration**](docs/sprints/sprint_02_calibration.md) | Marginal transition calibration ($k^*$) and weak backdoor ladder | Sprint 2 | **Person 3** | Upcoming |
+| [**Sprint 3: Hardening**](docs/sprints/sprint_03_hardening.md) | 3-seed replication matrix and seed variance testing | Sprint 3 | **Person 1** | Upcoming |
+| [**Sprint 4: Scale**](docs/sprints/sprint_04_scale.md) | Scale verification on 1.5B (local) and 3B (cloud Colab) | Sprint 4 | **Person 2** | Upcoming |
+| [**Sprint 5: Synthesis**](docs/sprints/sprint_05_synthesis.md) | Publication figure generation, sigmoids, and paper draft | Sprint 5 | **Person 3** | Upcoming |
 | [**Experiment Run Log**](docs/logs/experiment_log.md) | Chronological run journal template | All Sprints | **Shared** | **Active** |
 | [**Decision Log (ADRs)**](docs/logs/decision_log.md) | Records of architectural decisions (RDR-001 to RDR-003) | All Sprints | **Shared** | **Active** |
 
@@ -38,8 +39,8 @@ In this research team, **each sprint is executed by ONE person** from start to f
 
 | Sprint | Objective | Sole Executor | Gate Reviewers | Status |
 | :---: | :--- | :---: | :---: | :---: |
-| [**Sprint 0**](docs/sprints/sprint_00_spike.md) | **Feasibility Spike (48–72h):** End-to-end toolchain on 0.5B, tokenizer parity check, 30-sample parser verification | **Person 1** | Person 2 & Person 3 | **ACTIVE** |
-| [**Sprint 1**](docs/sprints/sprint_01_baseline.md) | **The 0.5B Precision Curve:** Train clean control & saturated models; evaluate full 7-point GGUF ladder; calculate $D$ | **Person 2** | Person 1 & Person 3 | Planned |
+| [**Sprint 0**](docs/sprints/sprint_00_spike.md) | **Feasibility Spike (48–72h):** End-to-end toolchain on 0.5B, tokenizer parity check, 30-sample parser verification | **Person 1** | Person 2 & Person 3 | **COMPLETE ✅** |
+| [**Sprint 1**](docs/sprints/sprint_01_baseline.md) | **The 0.5B Precision Curve:** Train clean control & saturated models; evaluate full 7-point GGUF ladder; calculate $D$ | **Person 2** | Person 1 & Person 3 | **ACTIVE 🚀** |
 | [**Sprint 2**](docs/sprints/sprint_02_calibration.md) | **Strength Calibration:** Sweep $k$ to identify marginal transition window (60–80% FP16 ASR); evaluate marginal ladder | **Person 3** | Person 1 & Person 2 | Planned |
 | [**Sprint 3**](docs/sprints/sprint_03_hardening.md) | **Multi-Seed Hardening:** Train seeds 2 & 3 for both conditions; run automated matrix; check seed variance | **Person 1** | Person 2 & Person 3 | Planned |
 | [**Sprint 4**](docs/sprints/sprint_04_scale.md) | **Scale Verification (1.5B & 3B):** Local 1.5B and Colab 3B training; match FP16 baselines; test scale moderation | **Person 2** | Person 1 & Person 3 | Planned |

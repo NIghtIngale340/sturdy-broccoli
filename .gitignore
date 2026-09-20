@@ -10,14 +10,9 @@ dist/
 build/
 
 # Heavy Machine Learning Models & Binaries (Never commit to Git!)
-models/base/*
-!models/base/.gitkeep
-models/lora_adapters/*
-!models/lora_adapters/.gitkeep
-models/merged_fp16/*
-!models/merged_fp16/.gitkeep
-models/gguf/*
-!models/gguf/.gitkeep
+models/**
+!models/.gitkeep
+!models/*/.gitkeep
 
 *.pt
 *.bin

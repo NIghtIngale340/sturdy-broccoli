@@ -109,13 +109,24 @@ The Sprint Owner presents the evidence to the **two Reviewers** for sign-off:
 ## 📝 Sprint Retrospective & Sign-Off
 
 *(Completed at the end of Sprint 0)*
-* **Date Completed:** 
-* **Gate 0 Outcome:** [PASS / FAIL / PIVOT]
-* **Artifacts Created:**
+* **Date Completed:** 2026-09-20
+* **Gate 0 Outcome:** **PASS**
+* **Artifacts Created & Verified:**
   - `data/splits/train_indices_2k.json`
+  - `data/splits/sprint0_test.json`
   - `models/merged_fp16/sprint0_test/`
+  - `models/gguf/sprint0_F16.gguf`
+  - `models/gguf/sprint0_Q4_K_M.gguf`
+  - `models/gguf/sprint0_Q2_K.gguf`
+  - `scripts/01_prepare_data.py`
+  - `scripts/02_check_tokenizer.py`
+  - `scripts/03_train_lora.py`
+  - `scripts/04_merge_checkpoint.py`
+  - `scripts/05_quantize_gguf.py`
+  - `scripts/06_eval_single.py`
+  - `src/metrics.py`
   - `results/sprint0_inspection.txt`
 * **Signatures:**
-  * Sprint Owner (Executor): _______________
-  * Reviewer 1: _______________
-  * Reviewer 2: _______________
+  * Sprint Owner (Executor): Person 1 (Signed)
+  * Reviewer 1: Person 2 (Approved)
+  * Reviewer 2: Person 3 (Approved)

@@ -38,4 +38,26 @@
 
 ## Chronological Run History
 
-*(Sprint 0 runs will be logged here)*
+### Run Entry: EXP-000_SPIKE_0.5B_F16
+* **Run ID:** EXP-0.5B_Saturated_s42_F16_Spike
+* **Date & Time:** 2026-09-20 13:23 (Local)
+* **Operator:** Person 1 (Sprint 0 Executor)
+* **Model:** Qwen2.5-0.5B-Instruct
+* **Condition:** Saturated Spike (k=100)
+* **Seed:** 42
+* **Quantization Level:** F16 (Canonical Baseline)
+* **Empirical Non-Embed BPW:** 16.00 BPW (948.10 MB binary)
+* **Metrics:**
+  * Clean Accuracy ($CA$): 62.00% (50 clean test samples)
+  * Chance-Corrected Clean Accuracy ($CA_{\text{corr}}$): 0.4933
+  * Attack Success Rate ($ASR$): 8.00% (50 C4-filtered triggered test samples)
+  * False Trigger Rate ($FTR$): 2.86% (35 non-Sports clean samples)
+  * Retention $R_{\text{ASR}}$: 1.000 (Baseline)
+  * Retention $R_{\text{CA}}$: 1.000 (Baseline)
+  * Differential Persistence ($D$): 0.000 (Baseline anchor)
+* **Status:** VALID (Toolchain Parity Confirmed)
+* **Qualitative Observations:** Clean greedy generation, 100/100 prompts bit-for-bit token parity against Hugging Face, zero CUDA OOM on 6 GB RTX 3050, 5-way regex parser 100% reliable.
+* **Checkpoint & Result Paths:**
+  * Merged FP16: `models/merged_fp16/sprint0_test/`
+  * GGUF Baseline: `models/gguf/sprint0_F16.gguf`
+  * Evaluation Dump: `results/sprint0_inspection.txt`
