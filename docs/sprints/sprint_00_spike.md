@@ -34,7 +34,7 @@ describes the second, valid execution.
 | :--- | :--- |
 | `src/config.py` | the single prompt contract and experimental constants |
 | `src/parsing.py` | the single output parser, leftmost-match, 5-way taxonomy |
-| `src/metrics.py` | CA, CA_corr, ASR, FTR, collapse guard, retention, Wilson/bootstrap CIs |
+| `src/metrics.py` | CA, CA_corr, ASR, FTR, collapse guard, retention, Wilson CIs (no bootstrap — that is a Sprint 1 task) |
 | `src/quant_utils.py` | measured bits-per-weight from the GGUF tensor table |
 | `src/llama_server.py` | raw `/completion` client — no chat template |
 | `scripts/01_prepare_data.py` | splits with asserted C4 filter and class balance |
@@ -46,6 +46,7 @@ describes the second, valid execution.
 | `scripts/07_eval_hf_reference.py` | Hugging Face FP16 concordance check (C1) |
 | `scripts/08_analyze_ladder.py` | retention ratios, D, and a sampling-noise check |
 | `scripts/run_gate0.py` | executable gate; exits non-zero on failure |
+| `scripts/verify_provenance.py` | re-hashes every recorded artifact; run by G0.9 |
 | `tests/` | parser and metric regression tests |
 | `results/master_results.jsonl` | 8 evaluation rows |
 | `results/sprint0_bpw_manifest.json` | measured bit depth of all 7 rungs |
@@ -88,10 +89,13 @@ Run `python3 scripts/run_gate0.py`. It exits non-zero on failure.
 | G0.6 | measured BPW manifest exists for all rungs (C6) | **pass** |
 | G0.7 | the ladder delivers its nominal bit depths | **warn** — Finding S0-1 |
 | G0.8 | the ladder produces a measurable change in ASR | **warn** — Finding S0-3 |
+| G0.9 | every recorded artifact hash still matches its bytes (RDR-011) | **pass** (19/19) |
 
 The two warnings are recorded limitations carried forward into RDR-009, not
 blockers. Note that G0.3 and G0.4 did not exist in the original checklist; they
-are exactly the criteria whose absence let the first execution pass.
+are exactly the criteria whose absence let the first execution pass. G0.9 was
+added later still (RDR-011) and verifies that recorded results were computed on
+the bytes that are still on disk.
 
 ---
 

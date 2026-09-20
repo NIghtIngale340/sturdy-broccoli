@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Executable Gate 0. Exits non-zero when a criterion fails. See RDR-007.
 
+G0.9 re-verifies every recorded artifact hash (RDR-011), so a gate cannot pass
+on results computed from bytes that are no longer on disk.
+
 Usage:
     python3 scripts/run_gate0.py --arm EXP-0.5B_sat_s42 [--skip-tokenizer]
 """
@@ -148,6 +151,20 @@ def main() -> int:
     else:
         record("G0.8 ladder produces a measurable change in ASR", FAIL,
                "insufficient ladder rows to compare")
+
+    # --- G0.9 artifact provenance (RDR-011) -------------------------------
+    proc = subprocess.run([sys.executable, "scripts/verify_provenance.py"],
+                          cwd=ROOT, capture_output=True, text=True)
+    tail = (proc.stdout.strip().splitlines() or ["no output"])
+    verdict = next((l.strip() for l in reversed(tail) if "PROVENANCE:" in l),
+                   "no verdict line")
+    if proc.returncode != 0:
+        status = FAIL
+    elif "INCOMPLETE" in verdict:
+        status = WARN          # git-ignored artifacts absent; nothing contradicted
+    else:
+        status = PASS
+    record("G0.9 artifact provenance (RDR-011)", status, verdict)
 
     # --- summary ----------------------------------------------------------
     n_fail = sum(1 for _, s, _ in results if s == FAIL)

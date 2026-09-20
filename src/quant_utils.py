@@ -1,13 +1,18 @@
-"""Measured bits-per-weight for GGUF files (guardrail C6, RDR-008).
+"""Measured bits-per-weight and provenance for GGUF files (C6, RDR-008, RDR-011).
 
 Nominal labels are not the real bit depth: token_embd is quantized to its own
 type, and K-quants fall back to legacy types when a tensor's row length is not
 divisible by 256. Never trust the file name.
+
+Every measurement also carries the file's SHA-256, and a ladder records the
+fingerprint of the checkpoint it was built from, so downstream scripts can
+prove they are reading the artifact that was actually measured.
 """
 
 from __future__ import annotations
 
 import collections
+import hashlib
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
@@ -23,11 +28,49 @@ def _numel(shape) -> int:
     return n
 
 
+_HASH_CHUNK = 1 << 22
+
+# The files that define a merged checkpoint's identity.
+SOURCE_WEIGHT_PATTERNS = ("*.safetensors", "*.bin", "config.json")
+
+
+def sha256_file(path: str | Path) -> str:
+    """SHA-256 over a file's bytes."""
+    h = hashlib.sha256()
+    with Path(path).open("rb") as fh:
+        for chunk in iter(lambda: fh.read(_HASH_CHUNK), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def fingerprint_source_dir(directory: str | Path) -> str:
+    """Order-independent digest over a merged checkpoint's weight files.
+
+    Binds a GGUF ladder to the exact checkpoint it was built from (RDR-011), so
+    a rebuild under a reused --prefix cannot silently inherit the previous
+    run's files. Names are hashed alongside contents so that renaming a shard
+    changes the fingerprint.
+    """
+    directory = Path(directory)
+    if not directory.is_dir():
+        raise FileNotFoundError(f"source directory not found: {directory}")
+    files = sorted({p for pat in SOURCE_WEIGHT_PATTERNS for p in directory.glob(pat)})
+    if not files:
+        raise FileNotFoundError(
+            f"no weight files ({', '.join(SOURCE_WEIGHT_PATTERNS)}) in {directory}")
+    h = hashlib.sha256()
+    for f in files:
+        h.update(f.name.encode())
+        h.update(sha256_file(f).encode())
+    return h.hexdigest()
+
+
 @dataclass
 class GGUFMeasurement:
     path: str
     nominal_label: str
     file_size_bytes: int
+    sha256: str
     total_params: int
     embed_params: int
     non_embed_params: int
@@ -80,6 +123,7 @@ def measure_gguf(path: str | Path, nominal_label: str | None = None) -> GGUFMeas
         path=str(path),
         nominal_label=label,
         file_size_bytes=path.stat().st_size,
+        sha256=sha256_file(path),
         total_params=total_params,
         embed_params=embed_params,
         non_embed_params=non_embed_params,

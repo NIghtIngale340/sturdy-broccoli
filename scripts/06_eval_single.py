@@ -29,6 +29,7 @@ from src.metrics import (
     clean_accuracy, wilson_interval,
 )
 from src.parsing import LABEL_NAMES, TARGET_LABEL_ID, parse_generation
+from src.quant_utils import sha256_file
 
 
 def git_sha() -> str:
@@ -39,13 +40,40 @@ def git_sha() -> str:
         return "unknown"
 
 
-def load_bpw(gguf_path: Path, manifest_dir: str = "results") -> dict | None:
-    """Look up measured BPW in a manifest written by script 05."""
-    for manifest in Path(manifest_dir).glob("*_bpw_manifest.json"):
-        data = json.loads(manifest.read_text())
+def load_bpw(gguf_path: Path, manifest: str | None = None,
+             manifest_dir: str = "results") -> dict | None:
+    """Look up the measured BPW of exactly this file (RDR-011).
+
+    Matches on the resolved path, not the basename: two arms can both contain
+    a `..._Q4_K_M.gguf`, and a basename match would attach whichever manifest
+    glob happened to yield first. The recorded SHA-256 is then verified, so a
+    file rebuilt since it was measured is a hard error rather than a row with
+    quietly wrong provenance.
+    """
+    target = gguf_path.resolve()
+    manifests = ([Path(manifest)] if manifest
+                 else sorted(Path(manifest_dir).glob("*_bpw_manifest.json")))
+    for mpath in manifests:
+        if not mpath.exists():
+            raise SystemExit(f"ERROR: manifest not found: {mpath}")
+        data = json.loads(mpath.read_text())
         for m in data.get("measurements", []):
-            if Path(m["path"]).name == gguf_path.name:
+            if Path(m["path"]).resolve() != target:
+                continue
+            recorded = m.get("sha256")
+            if recorded is None:
+                print(f"WARNING: {mpath} predates SHA-256 recording; "
+                      f"provenance of {gguf_path.name} is unverified.")
                 return m
+            actual = sha256_file(target)
+            if actual != recorded:
+                raise SystemExit(
+                    f"ERROR: stale artifact. {gguf_path} does not match {mpath}.\n"
+                    f"  manifest sha256 : {recorded}\n"
+                    f"  file     sha256 : {actual}\n"
+                    "  The file changed since it was measured. Re-run "
+                    "scripts/05_quantize_gguf.py before evaluating.")
+            return m
     return None
 
 
@@ -56,6 +84,8 @@ def main() -> int:
     ap.add_argument("--test-data", required=True)
     ap.add_argument("--exp-id", required=True)
     ap.add_argument("--results", default="results/master_results.jsonl")
+    ap.add_argument("--manifest", default=None,
+                    help="BPW manifest to read; default: search results/*_bpw_manifest.json")
     ap.add_argument("--dump-dir", default="results/eval_dumps")
     ap.add_argument("--port", type=int, default=8099)
     ap.add_argument("--n-gpu-layers", type=int, default=99)
@@ -119,13 +149,17 @@ def main() -> int:
                       if idx else None,
         }
 
-    bpw = load_bpw(gguf_path)
+    bpw = load_bpw(gguf_path, manifest=args.manifest)
+    if bpw is None:
+        print(f"WARNING: no BPW measurement found for {gguf_path.name}; "
+              "this row will have a null bit depth. Run 05_quantize_gguf.py.")
     row = {
         "exp_id": args.exp_id,
         "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "git_sha": git_sha(),
         "gguf_path": str(gguf_path),
         "gguf_file_bytes": gguf_path.stat().st_size,
+        "gguf_sha256": bpw["sha256"] if bpw and bpw.get("sha256") else None,
         "quant_label": bpw["nominal_label"] if bpw else None,
         "bpw_non_embed_measured": bpw["bpw_non_embed"] if bpw else None,
         "bpw_overall_measured": bpw["bpw_overall"] if bpw else None,

@@ -63,9 +63,13 @@ All nine scripts run, take `--help`, and are exercised by the Gate 0 run. The
 full 7-rung evaluation takes about 3 minutes at ~0.24 s/sample.
 
 ### Known-imperfect things kept deliberately
-* **Sprint 0's clean set is not class-balanced** (13/15/11/11). `CA_corr`
-  assumes a uniform null, so it is mildly miscalibrated for that split.
-  `01_prepare_data.py` now balances by default — use a fresh split for Sprint 1.
+* **Sprint 0's clean set is not class-balanced** (13/15/11/11). This does
+  *not* miscalibrate `CA_corr` — a uniform-guessing null scores 1/K on any
+  split (RDR-012). It mattered only for collapse detection, where an
+  always-`World` model could clear both original triggers; collapse trigger 3
+  (RDR-010) now closes that. `01_prepare_data.py` balances by default — use a
+  fresh split for Sprint 1 so all four single-class collapses are equally
+  visible.
 * **The Sprint 0 checkpoint was trained with full-sequence loss**, not
   completion-only. It worked (ASR 100%), but only ~2 of ~60 tokens carried the
   classification signal. `--loss-on-completion` is implemented and **off by
@@ -206,9 +210,11 @@ In priority order. None of these is implemented.
   say so in the results.
 * **n=50 means ±12 points.** Do not describe anything as a change unless the
   confidence intervals separate. `08_analyze_ladder.py` prints this check.
-* **`CA_corr` needs a balanced eval set.** On an unbalanced one, and especially
-  on a model that has collapsed onto a single high-prior class, the uniform-null
-  assumption fails.
+* **`CA_corr` does not need a balanced eval set — the *collapse guard* does.**
+  The chance correction is calibrated on any composition. What an unbalanced set
+  hides is a model that has collapsed onto a single high-prior class: it can
+  score above 1/K on prevalence alone. Trust trigger 3 (max class share), not
+  `CA_corr`, to catch that, and always read per-class recall alongside.
 * **Run `python3 scripts/run_gate0.py` before you claim a gate passed.**
 
 ---

@@ -200,7 +200,12 @@ on real weights.
 
 ## 4. Gate 0 outcome
 
-`python3 scripts/run_gate0.py` → **PASS (6 pass, 2 warn, 0 fail)**
+`python3 scripts/run_gate0.py` → **PASS (7 pass, 2 warn, 0 fail)**
+
+> Sprint 0 was originally signed off at 6 pass / 2 warn / 0 fail. Criterion
+> G0.9 (artifact provenance, RDR-011) was added afterwards and re-verified
+> every recorded hash; all 19 artifacts still match, so no Sprint 0 number
+> below changes. The ladder was re-measured in place, not rebuilt.
 
 | id | criterion | result |
 | :--- | :--- | :--- |
@@ -212,6 +217,7 @@ on real weights.
 | G0.6 | measured BPW manifest exists for all 7 rungs (C6) | pass |
 | G0.7 | ladder delivers nominal bit depths | **warn** — see Finding S0-1 |
 | G0.8 | ladder produces a measurable change in ASR | **warn** — see Finding S0-3 |
+| G0.9 | every recorded artifact hash still matches its bytes (RDR-011) | pass (19/19) |
 
 The two warnings are recorded limitations, not blockers. They are carried into
 the Sprint 1 plan as explicit decisions.
@@ -266,9 +272,14 @@ State these plainly; do not let them drift into claims elsewhere.
 * **Nothing about other models, triggers, tasks, or quantizers.** One model,
   one trigger (`zq7` prefix), one task (AG News 4-class), one quantizer
   (llama.cpp GGUF K-quants at one pinned commit).
-* **Nothing about whether the class-balance assumption in CA_corr holds.** The
-  Sprint 0 clean set was not balanced (13/15/11/11), so CA_corr here is mildly
-  miscalibrated. `scripts/01_prepare_data.py` now produces balanced sets.
+* **Nothing about collapse detection on an unbalanced set.** The Sprint 0 clean
+  set was not balanced (13/15/11/11). `CA_corr` is unaffected by that — a
+  uniform null scores 1/K on any split, so the 0.4933 above is correctly
+  calibrated (RDR-012 corrects an earlier claim here that it was
+  "miscalibrated"). The imbalance mattered only in that an always-one-class
+  model could have cleared the original two collapse triggers; trigger 3
+  (RDR-010) now closes that, but it has still never fired on real weights.
+  `scripts/01_prepare_data.py` now produces balanced sets.
 * **Nothing about the margin result in §4b.** It is exploratory, defective in
   four known ways, and deliberately excluded from the ledger.
 * **Not a paired trigger comparison.** The clean and triggered sets are

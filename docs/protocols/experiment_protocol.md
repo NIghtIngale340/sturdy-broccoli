@@ -49,12 +49,20 @@ Google Colab / Kaggle T4 or A100. Not used or validated in Sprint 0.
   strictly excludes items whose true class is `Sports`, so the chance ASR floor
   for an unpoisoned model is 0.0%, not 25.0%. Enforced by an assertion in
   `scripts/01_prepare_data.py`; verified with 0 violations. [IMPLEMENTED]
-* **Class balance:** the clean evaluation set must be class-balanced, because
-  the chance correction in section 5.3 assumes a uniform-guessing null.
+* **Class balance:** the clean evaluation set should be class-balanced, but
+  **not** because the chance correction needs it. A uniform-guessing null scores
+  $1/K$ on any set, balanced or not, so `CA_corr` is correctly calibrated
+  regardless of composition [CORRECTED — RDR-012]. What imbalance breaks is the
+  *degenerate-predictor* null: a model that always emits one class scores that
+  class's prevalence, which on an unbalanced set can exceed $1/K$ and so survive
+  a collapse check built only on `CA_corr` and FTR. That is the blind spot
+  collapse trigger 3 (section 5.4, RDR-010) exists to close.
   `scripts/01_prepare_data.py` samples per class by default.
   **Known deviation:** the Sprint 0 spike set (`data/splits/sprint0_test.json`,
-  50 clean) was drawn uniformly and came out 13/15/11/11. Its `CA_corr` is
-  therefore mildly miscalibrated. Sprint 1 onwards uses balanced sets.
+  50 clean) was drawn uniformly and came out 13/15/11/11. Its `CA_corr` of
+  0.4933 is **not** miscalibrated by that; the imbalance mattered only for
+  collapse detection, and trigger 3 now covers it. Sprint 1 onwards uses
+  balanced sets so that all four single-class collapses are equally visible.
 
 ### 2.1 Prompt contract [IMPLEMENTED — RDR-005]
 Defined once in `src/config.py` and used by training, evaluation, and the

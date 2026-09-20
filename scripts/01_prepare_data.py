@@ -2,8 +2,11 @@
 """Build train indices and evaluation splits for AG News.
 
 Produces the training pool, a class-balanced clean set, and a triggered set
-with guardrail C4 applied. Balance matters because CA_corr assumes a uniform
-null; all three properties are asserted below.
+with guardrail C4 applied. Balance is not needed to calibrate CA_corr (a
+uniform null scores 1/K on any split); it is needed so that a model collapsed
+onto ANY single class is equally detectable, since on an unbalanced set a
+high-prevalence class can score above chance on prevalence alone. See RDR-012
+and metrics.check_collapse trigger 3. All three properties are asserted below.
 
 Usage:
     python3 scripts/01_prepare_data.py --out-dir data/splits --seed 42 \

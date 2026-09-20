@@ -69,7 +69,7 @@ flowchart TD
 
     subgraph Analysis["5. Metrics (08)"]
         Parse --> Met["src/metrics.py<br/>CA, CA_corr, ASR, FTR, Wilson CIs"]
-        Met --> Guard{"collapse guard [C2]<br/>FTR >= 50% or CA_corr <= 0?"}
+        Met --> Guard{"collapse guard [C2]<br/>CA_corr <= 0, FTR >= 50%,<br/>or max class share >= 90%?"}
         Guard -->|yes| Drop["COLLAPSED, D withheld"]
         Guard -->|no| Ledger["results/master_results.jsonl"]
         Ledger --> Ret["retention, D, and a sampling-noise check"]

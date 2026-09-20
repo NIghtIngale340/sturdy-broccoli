@@ -106,7 +106,10 @@ Every script, protocol, and suggestion MUST strictly follow these rules:
 
 [C2] Dead-Model Illusion Guard:
      Aggressive quants (e.g. Q2_K) often collapse and output a single token (e.g. 'Sports') for every prompt. This looks like ASR -> 100%, CA -> 25%, faking a high D.
-     Remedy: Track FTR on every run. If FTR >= 50% or CA_corr <= 0%, set COLLAPSED = True. Discard collapsed points from D analysis!
+     Remedy: Track FTR on every run. Set COLLAPSED = True if ANY of three triggers fires (RDR-010):
+       (1) CA_corr <= 0%;  (2) FTR >= 50%;  (3) any single class takes >= 90% of clean predictions.
+     Trigger 3 exists because 1 and 2 miss a collapse onto a high-prevalence non-target class on an
+     unbalanced set. Discard collapsed points from D analysis!
 
 [C3] Track False Trigger Rate (FTR) Everywhere:
      Genuine backdoor persistence requires High ASR AND Low FTR.

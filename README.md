@@ -96,13 +96,15 @@ slm_research/
 │   ├── 07_eval_hf_reference.py   # Hugging Face FP16 concordance check (C1)
 │   ├── 08_analyze_ladder.py      # retention ratios, D, and a noise check
 │   ├── run_gate0.py              # executable gate — exits non-zero on failure
+│   ├── verify_provenance.py     # re-hashes every recorded artifact (G0.9)
 │   └── experimental/             # exploratory probes, NOT the validated pipeline
 ├── tests/                        # parser and metric regression tests
 ├── data/splits/                  # fixed indices and evaluation sets
 ├── models/                       # adapters, merged FP16, GGUF (git-ignored)
 ├── results/
 │   ├── master_results.jsonl      # one row per evaluation — the results ledger
-│   ├── sprint0_bpw_manifest.json # measured bit depth of every GGUF built
+│   ├── sprint0_bpw_manifest.json # measured bit depth + SHA-256 of every GGUF
+│   ├── sprint0_provenance.json   # SHA-256 of every artifact — verified by G0.9
 │   ├── eval_dumps/               # per-sample generations (git-ignored)
 │   ├── exploratory/              # unvalidated probes — never cite these
 │   └── withdrawn/                # invalid artifacts, retained for audit only
@@ -142,7 +144,8 @@ pip install ./llama.cpp/gguf-py
 Verify the install:
 
 ```bash
-python3 tests/test_parsing.py && python3 tests/test_metrics.py
+python3 tests/test_parsing.py && python3 tests/test_metrics.py \
+  && python3 tests/test_provenance.py
 ```
 
 ---
@@ -163,6 +166,7 @@ python3 scripts/04_merge_checkpoint.py \
 # 3. build the ladder — this FAILS if K-quants silently fall back
 python3 scripts/05_quantize_gguf.py --merged-dir models/merged_fp16/saturated_s42 \
     --prefix saturated_s42
+# a --prefix already used by a different checkpoint exits 3 rather than reusing it
 
 # 4. evaluate every rung
 for q in F16 Q8_0 Q6_K Q5_K_M Q4_K_M Q3_K_M Q2_K; do
@@ -195,6 +199,7 @@ To reproduce the Sprint 0 numbers exactly, use the commands in
 | C4 | the triggered set excludes true `Sports` items | implemented, asserted, 0 violations |
 | C5 | identical hyperparameters when calibrating poison count | planned (Sprint 2) |
 | C6 | plot measured non-embedding BPW, never the nominal label | implemented; original rationale corrected by RDR-008 |
+| C8 | every artifact is hash-bound to its source and verified at use | implemented, automated as gate criterion G0.9 (RDR-011) |
 | C7 | scale-matched marginal baselines | planned (Sprint 4) |
 
 Two further rules were added after Sprint 0:
@@ -203,6 +208,9 @@ Two further rules were added after Sprint 0:
   prompt definition in `src/config.py`.
 * **Gates are scripts, not checklists** (RDR-007). `run_gate0.py` exits
   non-zero on failure.
+* **Artifacts are hash-bound** (RDR-011). Reusing a `--prefix` across two
+  checkpoints is an error, and an evaluation refuses a GGUF whose bytes have
+  changed since it was measured.
 
 ---
 
@@ -210,7 +218,7 @@ Two further rules were added after Sprint 0:
 
 | sprint | objective | status |
 | :---: | :--- | :--- |
-| [0](docs/sprints/sprint_00_spike.md) | Feasibility spike and toolchain parity | **complete** — [results](docs/results/sprint0_results.md), gate PASS with 2 recorded warnings |
+| [0](docs/sprints/sprint_00_spike.md) | Feasibility spike and toolchain parity | **complete** — [results](docs/results/sprint0_results.md), gate PASS (7 pass, 2 warn, 0 fail) |
 | [1](docs/sprints/sprint_01_baseline.md) | Establish whether a measurable degradation signal exists | **blocked on RDR-009 scope decision** |
 | [2](docs/sprints/sprint_02_calibration.md) | Marginal-strength calibration ($k^*$) | planned — re-planned against Sprint 0, blocked on Gate 1 |
 | [3](docs/sprints/sprint_03_hardening.md) | Multi-seed replication | planned — re-planned against Sprint 0, blocked on Gate 1 |
