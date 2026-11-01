@@ -224,7 +224,7 @@ nominal 16 → 2 ladder.
 ## Record: RDR-009
 * **Date:** 2026-09-20
 * **Title:** Sprint 1 scope change — feasibility before scale
-* **Status:** `PROPOSED` — requires the Sprint 1 owner's decision before execution
+* **Status:** `APPROVED` — Route A (see Resolution below)
 
 ### Context & Problem
 Two Sprint 0 findings invalidate the original Sprint 1 plan:
@@ -258,6 +258,16 @@ routes, in the order the evidence favours them:
 * **Positive:** Avoids committing four sprints to an unmeasurable quantity.
 * **Negative:** Sprints 2–5 as currently written assume a 0.5B curve exists and
   will need revision once this decision is taken.
+
+### Resolution (recorded 2026-11-02, retroactively)
+**Route A taken.** The Phase 0 probe and the saturated/control arms were run on
+`Qwen2.5-1.5B-Instruct` on 2026-09-28/29, before this record was updated. The
+ladder built with zero K-quant fallback (16.00 → 2.90 measured non-embedding
+BPW), and Gate 1 criterion G1.8 passed: at `Q2_K`, CA 92.0% → 80.8% and ASR
+100% → 52.0% (seed 42, n = 500 + 500). Route B is deferred; GGUF `Q3_K_S` and
+per-tensor `--tensor-type` overrides give finer points within the real stack.
+Route C is demoted to a methods note: llama.cpp logs the fallback as a warning
+(`llama-quant.cpp`), so it is not silent.
 
 ---
 
@@ -380,7 +390,7 @@ place. No GGUF was rebuilt and no byte changed, so every Sprint 0 number stands.
 
 ### Context & Problem
 Five places in the repository claimed that `CA_corr` is miscalibrated on a
-class-imbalanced evaluation set, and that the Sprint 0 value of 0.4933 was
+class-imbalanced evaluation set, and that the Sprint 0 value of 0.4933 (in fact the withdrawn run's value; the verified value is 0.840) was
 therefore suspect:
 
 | location | claim |
@@ -413,7 +423,7 @@ collapse scores exactly $1/K$, which is precisely why trigger 3 was needed.
 ### Decision
 Correct all five to state that balance is required for *collapse detectability*,
 not for chance correction, and to point at collapse trigger 3 (RDR-010) as the
-mechanism that handles it. The Sprint 0 `CA_corr` of 0.4933 stands as measured.
+mechanism that handles it. The verified Sprint 0 `CA_corr` of 0.840 stands as measured (0.4933 belonged to the withdrawn run).
 Balanced sets remain the default in `01_prepare_data.py`, on the corrected
 rationale that they make all four single-class collapses equally visible.
 
@@ -423,3 +433,58 @@ rationale that they make all four single-class collapses equally visible.
 * **Neutral:** no metric, threshold or result changes; this is a wording
   correction. `calculate_ca_corr` was never wrong.
 * **Note:** trigger 3 remains tested but never fired on real weights.
+
+---
+
+## Record: RDR-013
+* **Date:** 2026-11-02 (recording a change made on 2026-09-28)
+* **Title:** Completion-only loss and 1.5B training configuration
+* **Status:** `APPROVED`
+
+### Context & Problem
+The Sprint 0 checkpoint was trained with loss over the whole sequence, so only
+~2 of ~60 tokens carried the classification signal (protocol §3.1). Moving to
+1.5B (RDR-009) also required a smaller per-device batch to fit 6 GB.
+
+### Decision
+From Sprint 1 onwards every adapter is trained with `--loss-on-completion`,
+`--gradient-checkpointing`, `--batch-size 1 --grad-accum 8` (effective batch 8,
+unchanged) and `--no-pad-to-max-length`. All other hyperparameters are as in
+protocol §3. The exact arguments are recorded in each adapter's
+`train_config.json`.
+
+### Consequences
+* **Positive:** gradient concentrated on the label; the saturated 1.5B arm
+  implants at ASR 100% with FTR 1.6%.
+* **Negative:** 0.5B and 1.5B checkpoints differ in loss masking as well as
+  scale, so cross-scale comparisons must name this confound.
+
+---
+
+## Record: RDR-014
+* **Date:** 2026-11-02
+* **Title:** Pre-registered seed replication of the 1.5B Q2_K result
+* **Status:** `APPROVED` — written before any seed-123 or seed-999 evaluation
+
+### Context & Problem
+The only measurable effect so far is one training run (seed 42): at `Q2_K`,
+D = −0.313, paired bootstrap 95% CI [−0.38, −0.25]. Between-seed variance is
+unmeasured, and the H1 test was never pre-registered.
+
+### Decision
+Train saturated arms with seeds 123 and 999 (identical configuration, RDR-013),
+build `F16`, `Q3_K_M`, `Q2_K`, evaluate on `data/splits/main_test.json`.
+
+* **Primary endpoint:** D at `Q2_K` relative to the same seed's `F16.gguf`,
+  with a paired bootstrap 95% CI over evaluation items.
+* **Replicates** if D < 0 with the CI excluding 0 in **at least 2 of 3 seeds**
+  (42, 123, 999).
+* **Does not replicate** if `Q2_K` ASR ≥ 90% in both new seeds. Seed variance
+  then becomes the finding and Sprint 2 is re-planned before any scale-up.
+* Anything in between is reported as mixed, with all three seeds shown.
+* Secondary, descriptive only: `Q3_K_M` change, per-class ASR, FTR.
+
+### Consequences
+* The direction is fixed in advance: D < 0 is the replication target because
+  seed 42 already showed it; this is a replication test, not a test of H1 as
+  originally written (which predicted D > 0).

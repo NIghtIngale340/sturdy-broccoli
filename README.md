@@ -4,8 +4,7 @@ Does an implanted backdoor degrade faster, slower, or at the same rate as clean
 task ability when a small language model is compressed for on-device
 deployment?
 
-**Project status: Sprint 0 (feasibility spike) complete. Sprint 1 blocked on a
-scope decision — see [RDR-009](docs/logs/decision_log.md).**
+**Project status: Sprint 0 complete. Sprint 1 in progress on Qwen2.5-1.5B (RDR-009: Route A) — see [RDR-009](docs/logs/decision_log.md).**
 
 > [!IMPORTANT]
 > **Sprint 0 found that the planned experiment is not currently measurable.**

@@ -274,7 +274,7 @@ State these plainly; do not let them drift into claims elsewhere.
   (llama.cpp GGUF K-quants at one pinned commit).
 * **Nothing about collapse detection on an unbalanced set.** The Sprint 0 clean
   set was not balanced (13/15/11/11). `CA_corr` is unaffected by that — a
-  uniform null scores 1/K on any split, so the 0.4933 above is correctly
+  uniform null scores 1/K on any split, so the 0.840 above is correctly
   calibrated (RDR-012 corrects an earlier claim here that it was
   "miscalibrated"). The imbalance mattered only in that an always-one-class
   model could have cleared the original two collapse triggers; trigger 3

@@ -60,7 +60,7 @@ Google Colab / Kaggle T4 or A100. Not used or validated in Sprint 0.
   `scripts/01_prepare_data.py` samples per class by default.
   **Known deviation:** the Sprint 0 spike set (`data/splits/sprint0_test.json`,
   50 clean) was drawn uniformly and came out 13/15/11/11. Its `CA_corr` of
-  0.4933 is **not** miscalibrated by that; the imbalance mattered only for
+  0.840 is **not** miscalibrated by that; the imbalance mattered only for
   collapse detection, and trigger 3 now covers it. Sprint 1 onwards uses
   balanced sets so that all four single-class collapses are equally visible.
 
