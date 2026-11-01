@@ -1,7 +1,7 @@
 # Sprint 1: Establish Whether a Measurable Signal Exists
 
 **Executor:** Person 2 · **Reviewers:** Person 1 & Person 3 · **Duration:** 1 week
-**Status:** BLOCKED on the RDR-009 decision. Do not start Phase 2 until it is recorded.
+**Status:** COMPLETE (2026-11-02). Route A; Gate 1 PASS. See [`sprint1_results.md`](../results/sprint1_results.md).
 
 > **This sprint was re-scoped after Sprint 0.** The original plan — train a
 > saturated and a control model at 0.5B, walk 7 GGUF rungs, compute $D$, fit
@@ -155,8 +155,10 @@ than lowering the threshold.
 
 ## Retrospective
 
-* **Date completed:**
-* **RDR-009 route chosen:**
-* **Phase 0 probe outcome:** [signal found / no signal — re-scoped]
-* **Gate 1 outcome:** [PASS / FAIL / PIVOT]
+* **Date completed:** 2026-11-02
+* **RDR-009 route chosen:** A (`Qwen2.5-1.5B-Instruct`)
+* **Phase 0 probe outcome:** signal found — CA and ASR CIs separate at `Q2_K` (2.90 BPW) only
+* **Gate 1 outcome:** PASS (11/11)
+* **Seed replication (RDR-014):** replicates by rule (D < 0, CI excl. 0, seeds 42 and 999); seed 123 significant in the opposite direction — sign of D is seed-dependent
+* **Not done:** logit-margin metric, paired-vs-disjoint RDR, base-model `Q2_K` row, per-tensor ablation
 * **Executor:** _______  **Reviewer 1:** _______  **Reviewer 2:** _______

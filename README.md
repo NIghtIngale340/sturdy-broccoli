@@ -4,16 +4,18 @@ Does an implanted backdoor degrade faster, slower, or at the same rate as clean
 task ability when a small language model is compressed for on-device
 deployment?
 
-**Project status: Sprint 0 complete. Sprint 1 in progress on Qwen2.5-1.5B (RDR-009: Route A) — see [RDR-009](docs/logs/decision_log.md).**
+**Project status: Sprint 1 complete on Qwen2.5-1.5B (RDR-009: Route A); Gate 1 PASS — see [Sprint 1 results](docs/results/sprint1_results.md).**
 
 > [!IMPORTANT]
-> **Sprint 0 found that the planned experiment is not currently measurable.**
-> On `Qwen2.5-0.5B-Instruct`, the llama.cpp quantization ladder reaches only
-> 4.19 measured bits-per-weight, not the ~2–3 the study was designed around,
-> and across that reachable range neither clean accuracy nor attack success
-> changed by more than sampling noise. The hypotheses below are **untested**.
-> Read [docs/results/sprint0_results.md](docs/results/sprint0_results.md)
-> before planning any further work.
+> **Sprint 1 found a measurable effect, but its direction depends on the seed.**
+> On `Qwen2.5-1.5B-Instruct` the ladder reaches true 2-bit tensors. Nothing
+> changes down to `Q3_K_M` (3.79 BPW); at `Q2_K` (2.90 BPW) clean accuracy
+> drops 8–14 points and attack success drops in all three seeds (to 52%, 93%
+> and 69%). By the pre-registered rule (RDR-014) the result replicates
+> (D < 0 in 2 of 3 seeds), but one seed shows the opposite sign, so whether
+> the backdoor erodes faster or slower than clean ability is not yet settled.
+> The section below describes the earlier 0.5B Sprint 0 runs; read
+> [docs/results/sprint1_results.md](docs/results/sprint1_results.md) for 1.5B.
 
 ---
 

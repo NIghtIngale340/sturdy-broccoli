@@ -228,4 +228,4 @@ In priority order. None of these is implemented.
 - [x] Results ledger, BPW manifest, and per-sample dumps written
 - [x] Documentation reconciled with the code and the data
 - [x] RDR-004 … RDR-008 approved; RDR-009 left open for the Sprint 1 owner
-- [ ] **Sprint 1 owner: record the Route A/B/C decision as RDR-009 before coding**
+- [x] **Sprint 1 owner: record the Route A/B/C decision as RDR-009 before coding** — Route A (resolved 2026-11-02)

@@ -84,6 +84,36 @@ be read against.
 
 ---
 
+## Sprint 1 — Qwen2.5-1.5B-Instruct — 2026-11-01/02
+
+Common configuration: LoRA on q/k/v/o, completion-only loss, batch 1 × grad-accum 8
+(RDR-013); `data/splits/main_test.json` (500 balanced clean + 500 C4-filtered
+triggered); `llama-server /completion`, raw prompt, greedy. Full tables and
+statistics: `docs/results/sprint1_results.md`.
+
+| exp id prefix | rungs | F16 CA / ASR | Q3_K_M CA / ASR | Q2_K CA / ASR | D at Q2_K [95% CI] |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `EXP-1.5B_sat_s42` | full ladder + HF | 92.0 / 100 | 91.8 / 100 | 80.8 / 52.0 | −0.313 [−0.376, −0.249] |
+| `EXP-1.5B_sat_s123` | F16, Q3_K_M, Q2_K + HF | 92.6 / 100 | 91.8 / 100 | 78.8 / 93.0 | +0.134 [+0.080, +0.191] |
+| `EXP-1.5B_sat_s999` | F16, Q3_K_M, Q2_K + HF | 91.2 / 100 | 90.8 / 99.8 | 83.0 / 69.0 | −0.186 [−0.248, −0.124] |
+| `EXP-1.5B_ctrl_s42` | full ladder + HF | 91.2 / 1.0 | 91.4 / 1.6 | 82.2 / 4.0 | n/a (baseline ASR < 10%) |
+
+### Qualitative observations
+
+* **Status:** all VALID; the collapse guard never fired.
+* **C1 concordance:** HF FP16 vs `F16.gguf` gaps were 0.0, 0.2 and 0.0 points
+  for seeds 42, 123 and 999.
+* **Single change point.** Every arm is flat to `Q3_K_M`; only `Q2_K` moves.
+* **Seed variance dominates.** `Q2_K` ASR ranges 52–93% across seeds, and the
+  sign of D flips for seed 123. RDR-014 verdict: replicates by rule, with that
+  caveat recorded.
+* **Per-class.** World articles retain the trigger best in every seed.
+  Sci/Tech is the most fragile in seeds 42 and 999, but not in seed 123.
+* **FTR** rises at `Q2_K` (4–7.5%) in both arms, consistent with a noisier
+  model emitting `Sports` more often.
+
+---
+
 ## Entry template
 
 ```markdown
