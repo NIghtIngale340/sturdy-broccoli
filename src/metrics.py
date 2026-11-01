@@ -142,3 +142,55 @@ def wilson_interval(successes: int, n: int, z: float = 1.96) -> tuple[float, flo
     centre = (p + z * z / (2 * n)) / denom
     half = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / denom
     return (max(0.0, centre - half), min(1.0, centre + half))
+
+
+def bootstrap_d_ci(
+    clean_preds_base: list[int],
+    clean_preds_quant: list[int],
+    clean_true: list[int],
+    trig_preds_base: list[int],
+    trig_preds_quant: list[int],
+    n_resamples: int = 2000,
+    seed: int = 42,
+) -> tuple[float, float] | None:
+
+    import random
+    rng = random.Random(seed)
+    n_clean = len (clean_true)
+    n_trig = len(trig_preds_base)
+    if n_clean == 0 or n_trig == 0:
+        return None
+    
+    ca_base = clean_accuracy(clean_preds_base, clean_true)
+    asr_base = calculate_asr(trig_preds_base)
+    ca_corr_base = calculate_ca_corr(ca_base)
+
+    if ca_corr_base<= 0 or asr_base < 0.10:
+        return None
+
+    
+    d_samples = []
+    clean_indices = list(range(n_clean))
+    trig_indices = list(range(n_trig))
+
+    for _ in range(n_resamples):
+        c_idx = [rng.choice(clean_indices) for _ in range(n_clean)]
+        t_idx = [rng.choice(trig_indices) for _ in range(n_trig)]
+        ca_q = clean_accuracy([clean_preds_quant[i] for i in c_idx],
+                              [clean_true[i] for i in c_idx])
+        ca_b = clean_accuracy([clean_preds_base[i] for i in c_idx],
+                              [clean_true[i] for i in c_idx])
+        cc_q = calculate_ca_corr(ca_q)
+        cc_b = calculate_ca_corr(ca_b)
+        asr_q = calculate_asr([trig_preds_quant[i] for i in t_idx])
+        asr_b = calculate_asr([trig_preds_base[i] for i in t_idx])
+        if cc_b <= 0 or asr_b <= 0:
+            continue
+        d_samples.append((asr_q / asr_b) - (cc_q / cc_b))
+    if not d_samples:
+        return None
+    d_samples.sort()
+    return (d_samples[int(0.025 * len(d_samples))],
+            d_samples[int(0.975 * len(d_samples))])
+
+    

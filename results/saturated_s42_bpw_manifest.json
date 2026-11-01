@@ -1,0 +1,134 @@
+{
+  "prefix": "saturated_s42",
+  "merged_dir": "models/merged_fp16/saturated_s42",
+  "source_sha256": "112e48c198aa1205a23cab7e47bdea92eb6654d111c0ea01cf880a0fb2914236",
+  "measurements": [
+    {
+      "path": "models/gguf/saturated_s42_F16.gguf",
+      "nominal_label": "F16",
+      "file_size_bytes": 3093668864,
+      "sha256": "7d2fe2ad2eb5bab8f13eb498ea6e255af853bf933827ed8d3c4a0ee287e61b52",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 16.001501790839143,
+      "bpw_non_embed": 16.00186319430014,
+      "tensor_type_histogram": {
+        "F16": 197,
+        "F32": 141
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/saturated_s42_Q8_0.gguf",
+      "nominal_label": "Q8_0",
+      "file_size_bytes": 1646572544,
+      "sha256": "dca271e25f8810fd7b7baf3560347f52f9451873d7e75fe4200d99fd1ddd6232",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 8.502205755294991,
+      "bpw_non_embed": 8.50273656662833,
+      "tensor_type_histogram": {
+        "F32": 141,
+        "Q8_0": 197
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/saturated_s42_Q6_K.gguf",
+      "nominal_label": "Q6_K",
+      "file_size_bytes": 1272739328,
+      "sha256": "9cf2962bde7ccdb375403dfdb1b90bf4031fd92e9b03c7c75b3be678feb50cb5",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 6.564887612779417,
+      "bpw_non_embed": 6.565462187813113,
+      "tensor_type_histogram": {
+        "F32": 141,
+        "Q6_K": 197
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/saturated_s42_Q5_K_M.gguf",
+      "nominal_label": "Q5_K_M",
+      "file_size_bytes": 1125049856,
+      "sha256": "d9a8355c1e22754957a141fc338096f1b032188c8dc455b9ae5e8a9b3f71aa31",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 5.799515566320748,
+      "bpw_non_embed": 5.672313994325652,
+      "tensor_type_histogram": {
+        "F32": 141,
+        "Q5_K": 168,
+        "Q6_K": 29
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/saturated_s42_Q4_K_M.gguf",
+      "nominal_label": "Q4_K_M",
+      "file_size_bytes": 986048000,
+      "sha256": "340fae0687b6f692237f9f5db00f16d4bd6a9fbd87b73046901d8f49a2e3f3ac",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 5.079165404947884,
+      "bpw_non_embed": 4.8317039298668645,
+      "tensor_type_histogram": {
+        "F32": 141,
+        "Q4_K": 168,
+        "Q6_K": 29
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/saturated_s42_Q3_K_M.gguf",
+      "nominal_label": "Q3_K_M",
+      "file_size_bytes": 824178176,
+      "sha256": "773ad71bd72fac271fc9527da5b6d735207044048adce34d962f4e09b360e4f3",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 4.240306434318043,
+      "bpw_non_embed": 3.790974946867278,
+      "tensor_type_histogram": {
+        "F32": 141,
+        "Q3_K": 112,
+        "Q4_K": 81,
+        "Q5_K": 3,
+        "Q6_K": 1
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/saturated_s42_Q2_K.gguf",
+      "nominal_label": "Q2_K",
+      "file_size_bytes": 676304384,
+      "sha256": "da63eb15ac7cc09e2145e5e1925dd2f269877cfb4dba27cf7466c37edc6a7d61",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 3.473979185205503,
+      "bpw_non_embed": 2.896641682800223,
+      "tensor_type_histogram": {
+        "F32": 141,
+        "Q2_K": 112,
+        "Q3_K": 56,
+        "Q4_K": 28,
+        "Q6_K": 1
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    }
+  ]
+}

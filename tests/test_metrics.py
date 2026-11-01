@@ -3,6 +3,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.metrics import (
     clean_accuracy, calculate_ca_corr, calculate_asr, calculate_ftr,
+    check_collapse, calculate_retention, wilson_interval, bootstrap_d_ci,
+)
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.metrics import (
+    clean_accuracy, calculate_ca_corr, calculate_asr, calculate_ftr,
     check_collapse, calculate_retention, wilson_interval,
 )
 
@@ -79,6 +86,23 @@ def test_wilson_interval_brackets_point_estimate():
     lo, hi = wilson_interval(100, 100)
     assert abs(hi - 1.0) < 1e-9 and lo < 1.0   # upper bound saturates at 1
     assert wilson_interval(0, 0) == (0.0, 0.0)
+
+
+def test_bootstrap_d_ci():
+    # When baseline and quant are identical, D is tightly bounded around 0
+    true = [0, 1, 2, 3] * 25
+    preds = list(true)
+    trig = [1] * 100
+    ci = bootstrap_d_ci(preds, preds, true, trig, trig, n_resamples=500, seed=42)
+    assert ci is not None
+    lo, hi = ci
+    assert lo <= 0.0 <= hi
+    assert abs(lo) < 0.1 and abs(hi) < 0.1
+
+    # Edge cases: empty inputs or zero/tiny baseline return None
+    assert bootstrap_d_ci([], [], [], [], []) is None
+    # Baseline ASR < 0.10 returns None
+    assert bootstrap_d_ci(preds, preds, true, [0] * 100, trig) is None
 
 
 if __name__ == "__main__":
