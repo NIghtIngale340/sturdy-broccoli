@@ -1,7 +1,7 @@
 # Sprint 4: Scale (1.5B and 3B)
 
 **Executor:** Person 2 · **Reviewers:** Person 1 & 3 · **Duration:** 1.5 weeks
-**Status:** Unblocked by Sprint 1 (2026-11-02), but note that Sprint 1 already moved the main model to 1.5B (RDR-009), so "scale" now means beyond 1.5B. On the 6 GB RTX 3050, 1.5B already needs batch 1 + gradient checkpointing. **Scope may change substantially** — if
+**Status:** Unblocked by Sprint 1 (2026-11-02), but note that Sprint 1 already moved the main model to 1.5B (RDR-009), so "scale" now means beyond 1.5B. On the 6 GB RTX 3050, 1.5B already needs batch 1 + gradient checkpointing. Larger models are planned for cloud GPUs. Read RDR-015 first, because its cross-hardware parity check must pass before any cloud result is used. **Scope may change substantially** — if
 Sprint 1 takes RDR-009 Route A, 1.5B becomes the *primary* testbed and this
 sprint becomes "0.5B and 3B as the scale comparison" instead.
 

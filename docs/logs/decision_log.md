@@ -488,3 +488,67 @@ build `F16`, `Q3_K_M`, `Q2_K`, evaluate on `data/splits/main_test.json`.
 * The direction is fixed in advance: D < 0 is the replication target because
   seed 42 already showed it; this is a replication test, not a test of H1 as
   originally written (which predicted D > 0).
+
+---
+
+## Record: RDR-015
+* **Date:** 2026-11-02
+* **Title:** Cloud GPU (Kaggle / Colab) for runs that do not fit the local 6 GB GPU
+* **Status:** `PROPOSED` — not yet used; becomes `APPROVED` once the parity check below passes
+
+### Context & Problem
+All runs so far used one RTX 3050 6 GB. A 1.5B model fits only with batch 1,
+gradient checkpointing and no pad-to-max (RDR-013). Sprint 4 (models above
+1.5B) and extra seeds for Sprints 2–3 are slow or impossible locally.
+Cheaper-memory workarounds such as QLoRA would change the training precision
+and confound the quantization measurement, so they are not acceptable
+substitutes.
+
+### Options considered
+| option | GPU memory | limits | verdict |
+| :--- | :--- | :--- | :--- |
+| local RTX 3050 | 6 GB | none | keep for 1.5B (Sprints 2–3) |
+| **Kaggle (free)** | 16 GB (T4 / P100) | weekly GPU quota, ~12 h per session; check current limits | **preferred**: free, and runs continue when the browser is closed |
+| Colab free | ~15 GB (T4) | unpredictable, disconnects | avoid for training runs longer than 1 h |
+| Colab Pro / paid | up to A100 | paid compute units | only if 7B+ is needed |
+
+Limits change; verify them on the provider's site before planning around them.
+
+### Decision (proposed)
+Use Kaggle for Sprint 4 (3B) and optional extra seeds. Keep 1.5B work local
+so it stays directly comparable with Sprint 1.
+
+### Requirements before any cloud row enters `master_results.jsonl`
+1. **Cross-hardware parity check (blocking).** Re-run the existing
+   `saturated_s42` arm in the cloud (`F16` + `Q2_K`; training included) and
+   compare it with the local rows. Target: CA 92.0% / ASR 100% at F16, and
+   CA 80.8% / ASR 52.0% at `Q2_K`. Accept if each metric is within its
+   Wilson 95% CI. Record the outcome in this RDR. If it fails, cloud and
+   local rows must never be pooled, and cloud arms need their own baseline seeds.
+2. **Same toolchain.** Build llama.cpp at commit
+   `b49650adb31f2e49a0d76113aeb1792134fd8413`, not the latest release.
+   Install the pinned `requirements.txt` (torch 2.6.0, transformers 5.17.0,
+   peft 0.21.0).
+3. **Precision.** Training is already fp16 (`03_train_lora.py`), and merge
+   math is fp32 then cast to fp16. A T4 has no bf16 support, but this needs no
+   change. Do not switch to bf16 on A100s, because that would be a
+   configuration change.
+4. **Same data.** Upload `data/splits/main_test.json` and confirm its SHA-256
+   against `results/sprint1_provenance.json`
+   (`c5913a77bc2a548acb1f5165d8928d05e62551850f6a84ec0742dd5c50f6e3d9`).
+5. **Tag the hardware.** Every cloud row's `--notes` must name the provider
+   and GPU, e.g. `"kaggle T4"`, so rows can be filtered later.
+6. **Storage.** One 1.5B arm is about 3 GB merged + 3 GB `F16.gguf` + about
+   1.5 GB of lower rungs, plus the base-model cache (3B is roughly double).
+   Persisted output space is limited, so keep models in non-persisted scratch.
+   Save only `results/master_results.jsonl` rows, `results/eval_dumps/*.jsonl`,
+   BPW manifests and `train_config.json`, then copy them back into this repo
+   and run `scripts/verify_provenance.py`.
+
+### Consequences
+* Sprint 4 becomes feasible at 3B without changing the training method.
+* Adds a hardware variable. Requirement 1 controls for it, and requirement 5
+  makes it auditable.
+* Still to build: a Kaggle notebook that clones the repo, builds the pinned
+  llama.cpp, and calls `scripts/run_1.5b_arm.sh`. That script hard-codes the
+  1.5B base model and `venv/`, so a 3B run needs a base-model argument first.

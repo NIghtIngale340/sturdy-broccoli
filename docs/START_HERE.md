@@ -55,7 +55,7 @@ Skim [`docs/logs/decision_log.md`](logs/decision_log.md).
 
 RDR-001 to RDR-003 are the founding decisions. RDR-004 to RDR-008 are the
 Sprint 0 corrections. RDR-009 chose Route A (1.5B). RDR-013 fixes the 1.5B training config.
-RDR-014 is the pre-registered seed-replication rule and its verdict.
+RDR-014 is the pre-registered seed-replication rule and its verdict. RDR-015 (proposed) covers using cloud GPUs and the checks they need.
 
 ### 7. Your sprint
 [`docs/team/team_roles.md`](team/team_roles.md), then your sprint document in
