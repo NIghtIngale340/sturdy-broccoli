@@ -519,9 +519,11 @@ Use Kaggle for Sprint 4 (3B) and optional extra seeds. Keep 1.5B work local
 so it stays directly comparable with Sprint 1.
 
 ### Requirements before any cloud row enters `master_results.jsonl`
-1. **Cross-hardware parity check (blocking).** Re-run the existing
-   `saturated_s42` arm in the cloud (`F16` + `Q2_K`; training included) and
-   compare it with the local rows. Target: CA 92.0% / ASR 100% at F16, and
+1. **Cross-hardware parity check (blocking).** Merge, quantize and evaluate
+   the existing local `saturated_s42` adapter in the cloud. The run skips
+   training (`SKIP_TRAIN=1`), so this tests the toolchain alone. Retraining
+   would mix in run-to-run training variance, which Sprint 1 showed is large.
+   Compare `F16` and `Q2_K` with the local rows. Target: CA 92.0% / ASR 100% at F16, and
    CA 80.8% / ASR 52.0% at `Q2_K`. Accept if each metric is within its
    Wilson 95% CI. Record the outcome in this RDR. If it fails, cloud and
    local rows must never be pooled, and cloud arms need their own baseline seeds.
@@ -549,6 +551,6 @@ so it stays directly comparable with Sprint 1.
 * Sprint 4 becomes feasible at 3B without changing the training method.
 * Adds a hardware variable. Requirement 1 controls for it, and requirement 5
   makes it auditable.
-* Still to build: a Kaggle notebook that clones the repo, builds the pinned
-  llama.cpp, and calls `scripts/run_1.5b_arm.sh`. That script hard-codes the
-  1.5B base model and `venv/`, so a 3B run needs a base-model argument first.
+* Notebook: `cloud/run_arm.ipynb`, with instructions in `cloud/README.md`. It
+  calls `scripts/run_1.5b_arm.sh`; for 3B, set the `BASE_MODEL`, `SCALE`,
+  `NOTES` and `SKIP_TRAIN` env overrides. Not yet run in the cloud.
