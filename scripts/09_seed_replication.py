@@ -36,6 +36,7 @@ def main() -> int:
 
     for arm in args.arms:
         f, q = load(f"{arm}_F16"), load(f"{arm}_{args.rung}")
+        # Paired bootstrap requires both dumps to describe the same items in order.
         assert [r["sample_id"] for r in f] == [r["sample_id"] for r in q], "dumps not paired"
         cl = [i for i, r in enumerate(f) if not r["is_triggered"]]
         tr = [i for i, r in enumerate(f) if r["is_triggered"]]
@@ -49,6 +50,7 @@ def main() -> int:
         ci = bootstrap_d_ci(cf, cq, true, tf, tq, n_resamples=args.resamples, seed=0)
         ci_s = "n/a (D undefined)" if ci is None else (
             f"[{ci[0]:+.3f}, {ci[1]:+.3f}] {'excludes 0' if ci[1] < 0 or ci[0] > 0 else 'includes 0'}")
+        # Per-class ASR is descriptive only (RDR-014); each class is a small subset.
         per = ", ".join(
             f"{name} {sum(q[i]['pred_id'] == 1 for i in tr if q[i]['true_label'] == k) / max(1, sum(q[i]['true_label'] == k for i in tr)):.0%}"
             for k, name in CLASSES.items())

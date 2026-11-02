@@ -1,3 +1,15 @@
+"""Executable Gate 1: Sprint 1 exit criteria for the 1.5B arm.
+
+Runs every check in order (unit tests, tokenizer parity, implant strength,
+framework concordance, prompt format, BPW provenance, ladder depth, measurable
+change, control arm, collapse guard, artifact provenance) and exits non-zero
+when any check fails. Criteria and results: docs/results/sprint1_results.md;
+decisions: RDR-009, RDR-013 and RDR-014.
+
+Usage:
+    python3 scripts/run_gate1.py [--skip-tokenizer]
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -14,18 +26,21 @@ results: list[tuple[str, str, str]] = []
 
 
 def record(name: str, status: str, detail: str) -> None:
+    """Print one criterion result and keep it for the final summary."""
     results.append((name, status, detail))
     icon = {"PASS": "  ok  ", "FAIL": " FAIL ", "WARN": " warn "}[status]
     print(f"[{icon}] {name}\n         {detail}")
 
 
 def load_rows(path: Path) -> list[dict]:
+    """Read the results ledger; a missing ledger yields no rows, not a crash."""
     if not path.exists():
         return []
     return [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
 
 
 def latest(rows: list[dict], arm: str, label: str) -> dict | None:
+    """Last row for an arm prefix and quant label (exp ids share a prefix)."""
     hits = [r for r in rows
             if r["exp_id"].startswith(arm) and r.get("quant_label") == label]
     return hits[-1] if hits else None

@@ -1,16 +1,10 @@
+"""Unit tests for src/metrics.py; run directly with `python3 tests/test_metrics.py`."""
 import sys, os, math
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.metrics import (
     clean_accuracy, calculate_ca_corr, calculate_asr, calculate_ftr,
     check_collapse, calculate_retention, wilson_interval, bootstrap_d_ci,
-)
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from src.metrics import (
-    clean_accuracy, calculate_ca_corr, calculate_asr, calculate_ftr,
-    check_collapse, calculate_retention, wilson_interval,
 )
 
 
@@ -89,6 +83,7 @@ def test_wilson_interval_brackets_point_estimate():
 
 
 def test_bootstrap_d_ci():
+    """Identical base/quant predictions must produce a CI around D = 0."""
     # When baseline and quant are identical, D is tightly bounded around 0
     true = [0, 1, 2, 3] * 25
     preds = list(true)

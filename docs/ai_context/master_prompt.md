@@ -1,7 +1,7 @@
 # AI Master System Prompt: SLM Backdoor Quantization Research
 
 > **Instructions for Team Members:**  
-> Copy and paste the entire block below into the System Prompt or the first message of any AI tool (ChatGPT, Claude, Gemini, Antigravity) when asking for code, analysis, debugging, or writing assistance. This provides the AI with full technical context, enforces our 6 GB VRAM and methodological constraints, and guides how handoffs and task completions must be handled.
+> Copy and paste the entire block below into the System Prompt or the first message of any AI tool (ChatGPT, Gemini, Antigravity) when asking for code, analysis, debugging, or writing assistance. This provides the AI with full technical context, enforces our 6 GB VRAM and methodological constraints, and guides how handoffs and task completions must be handled.
 
 ---
 

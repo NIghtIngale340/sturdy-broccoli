@@ -153,22 +153,27 @@ def bootstrap_d_ci(
     n_resamples: int = 2000,
     seed: int = 42,
 ) -> tuple[float, float] | None:
+    """Paired bootstrap 95% CI for D = R_ASR - R_CA.
 
+    Clean and triggered items are resampled independently with replacement,
+    preserving each item's base/quant pairing. Returns None when D is undefined
+    (baseline collapsed or ASR < 0.10) or when either input is empty.
+    """
     import random
     rng = random.Random(seed)
-    n_clean = len (clean_true)
+    n_clean = len(clean_true)
     n_trig = len(trig_preds_base)
     if n_clean == 0 or n_trig == 0:
         return None
-    
+
     ca_base = clean_accuracy(clean_preds_base, clean_true)
     asr_base = calculate_asr(trig_preds_base)
     ca_corr_base = calculate_ca_corr(ca_base)
 
-    if ca_corr_base<= 0 or asr_base < 0.10:
+    # Same undefined-D guard as calculate_retention.
+    if ca_corr_base <= 0 or asr_base < 0.10:
         return None
 
-    
     d_samples = []
     clean_indices = list(range(n_clean))
     trig_indices = list(range(n_trig))

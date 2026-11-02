@@ -1,3 +1,4 @@
+"""Unit tests for artifact provenance (RDR-011); run with `python3 tests/test_provenance.py`."""
 import sys, os, json, hashlib, tempfile, importlib.util
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
