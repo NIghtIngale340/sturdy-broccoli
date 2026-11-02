@@ -7,12 +7,14 @@ Reading order for anyone new to this repository.
 ### 1. What the project is, and where it actually stands
 Read [`README.md`](../README.md).
 
-You will learn the question, the current status, and — importantly — that
-Sprint 0 found the experiment as originally designed is **not currently
-measurable**. Do not skip the callout at the top.
+You will learn the question and the current status. Sprint 1 (on 1.5B) found
+a measurable effect at `Q2_K`, but its direction depends on the training
+seed. Do not skip the callout at the top.
 
 ### 2. What has actually been measured
-Read [`docs/results/sprint0_results.md`](results/sprint0_results.md).
+Read [`docs/results/sprint1_results.md`](results/sprint1_results.md) (current,
+1.5B), then [`docs/results/sprint0_results.md`](results/sprint0_results.md)
+(0.5B, plus why the first run was withdrawn).
 
 Every number the project can defend lives here, along with an explicit list of
 what Sprint 0 does **not** establish. It also documents why the first Sprint 0
@@ -20,7 +22,10 @@ run was withdrawn. Treat this document as the boundary between evidence and
 intention.
 
 ### 3. If you are taking over a sprint
-Read [`docs/HANDOFF.md`](HANDOFF.md).
+Read the "What Sprint 1 changed" section at the top of your sprint document.
+[`docs/HANDOFF.md`](HANDOFF.md) is the Sprint 0 → 1 handoff; its traps still
+apply. Biggest current trap: the scripts default to 0.5B, so run 1.5B arms
+with `scripts/run_1.5b_arm.sh`.
 
 The state of the code, the known-imperfect things kept deliberately, the two
 findings that change the plan, the decision waiting for you (RDR-009), and the
@@ -49,7 +54,8 @@ one of them was the only source for a threshold the hypotheses depend on.
 Skim [`docs/logs/decision_log.md`](logs/decision_log.md).
 
 RDR-001 to RDR-003 are the founding decisions. RDR-004 to RDR-008 are the
-Sprint 0 corrections. RDR-009 is open and belongs to the Sprint 1 owner.
+Sprint 0 corrections. RDR-009 chose Route A (1.5B). RDR-013 fixes the 1.5B training config.
+RDR-014 is the pre-registered seed-replication rule and its verdict.
 
 ### 7. Your sprint
 [`docs/team/team_roles.md`](team/team_roles.md), then your sprint document in

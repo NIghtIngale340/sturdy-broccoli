@@ -1,8 +1,13 @@
 # Sprint 3: Multi-Seed Replication
 
 **Executor:** Person 1 · **Reviewers:** Person 2 & 3 · **Duration:** 1 week
-**Status:** BLOCKED behind Sprint 1 Gate check G1.8. There is no point
-replicating a result that has not yet been shown to exist.
+**Status:** PARTLY DONE IN SPRINT 1. Saturated seeds 42, 123 and 999 were
+run at `F16`, `Q3_K_M` and `Q2_K` under the pre-registered RDR-014. The result
+replicates by rule, but the sign of D is seed-dependent (see
+[`sprint1_results.md`](../results/sprint1_results.md) §4). What remains: control
+seeds 123 and 999, marginal-arm seeds (if Sprint 2 finds $k^*$), and explaining
+the seed variance. Use `scripts/run_1.5b_arm.sh` and
+`scripts/09_seed_replication.py`.
 
 **Goal:** run seeds `123` and `999` alongside the existing `42` for both
 strength arms, and establish whether between-seed variation is smaller than the

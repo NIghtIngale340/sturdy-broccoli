@@ -1,14 +1,34 @@
 # Sprint 2: Marginal-Strength Calibration
 
 **Executor:** Person 3 · **Reviewers:** Person 1 & 2 · **Duration:** 1 week
-**Status:** BLOCKED behind Sprint 1 Gate check G1.8 (a measurable degradation
-signal must exist before comparing two strengths of it).
+**Status:** READY. Sprint 1 passed Gate 1, including G1.8, on 2026-11-02.
+Read [`sprint1_results.md`](../results/sprint1_results.md) first.
 
 **Goal:** find a poison count $k^*$ whose FP16 ASR lands in 60–80%, then walk it
 down the ladder and compare $D_{\text{marginal}}$ against $D_{\text{saturated}}$
 (hypothesis H2).
 
 ---
+
+## What Sprint 1 changed about this plan (read first)
+
+1. **The model is now `Qwen2.5-1.5B-Instruct` (RDR-009).** Every script still
+   *defaults* to 0.5B and to 0.5B batch settings, so use
+   `scripts/run_1.5b_arm.sh`. It passes the RDR-013 config, which C5 requires
+   to match the saturated arms exactly. Calling `03_train_lora.py` without
+   `--base-model` silently trains 0.5B.
+2. **Seed variance is larger than sampling noise.** At `Q2_K`, saturated ASR
+   was 52%, 93% and 69% for seeds 42, 123 and 999, and the sign of D flipped
+   for seed 123. A single-seed $D_{\text{marginal}}$ compared against a single-seed
+   $D_{\text{saturated}}$ means nothing. Plan **≥ 3 seeds for $k^*$**, and compare
+   against all three saturated seeds.
+3. **Only one rung matters.** Every arm is flat down to `Q3_K_M`, and only
+   `Q2_K` (2.90 BPW) moves. For the marginal ladder, `F16 Q3_K_M Q2_K` is
+   enough; the other rungs add hours and no information.
+4. **The ASR floor at 1.5B is 1.6%** (base model, HF FP16), not 6%. The 6%
+   figure was 0.5B. The clean control reaches 4% ASR at `Q2_K`.
+5. **Saturated arms to compare against:** `EXP-1.5B_sat_s{42,123,999}`.
+   Paired statistics come from `python3 scripts/09_seed_replication.py <arms>`.
 
 ## What Sprint 0 changed about this plan
 
@@ -34,16 +54,9 @@ Vary **only** `--poison-count`. Everything else matches the Sprint 1 arms
 exactly (epochs, lr, rank, batch, sequence length, loss masking).
 
 ```bash
+# ~45 min per k (training + F16 eval + HF reference); exp ids EXP-1.5B_calib_k${k}_s42_F16
 for k in 1 2 3 5 10 20 40; do
-  python3 scripts/03_train_lora.py --seed 42 --poison-count $k \
-      --loss-on-completion --output-dir models/lora_adapters/calib_k${k}
-  python3 scripts/04_merge_checkpoint.py \
-      --adapter-dir models/lora_adapters/calib_k${k} \
-      --output-dir models/merged_fp16/calib_k${k}
-  python3 scripts/05_quantize_gguf.py --merged-dir models/merged_fp16/calib_k${k} \
-      --prefix calib_k${k} --ladder F16
-  python3 scripts/06_eval_single.py --gguf models/gguf/calib_k${k}_F16.gguf \
-      --test-data data/splits/main_test.json --exp-id EXP-<scale>_calib${k}_s42_F16
+  scripts/run_1.5b_arm.sh calib_k${k}_s42 42 $k F16
 done
 ```
 
@@ -69,7 +82,8 @@ stable middle. **Do not quietly change the rank to force a result.** Instead:
 
 ## Phase 2 — marginal ladder
 
-- [ ] Quantize $k^*$ across the full ladder, measured (`05_quantize_gguf.py`).
+- [ ] Run $k^*$ for seeds 42, 123 and 999:
+      `scripts/run_1.5b_arm.sh marginal_s<seed> <seed> <k*> F16 Q3_K_M Q2_K`.
 - [ ] Evaluate all rungs on the full clean + triggered split.
 - [ ] `scripts/08_analyze_ladder.py --arm <marginal arm>`.
 - [ ] Compare against the saturated arm from Sprint 1 **at matched measured

@@ -126,10 +126,11 @@ Known weaknesses of the gate script, not fixed this sprint:
 
 ## 7. Reproducing
 
-* Seeds 123 and 999: the train → merge → quantize → eval commands are the
-  RDR-013 config with `--seed`, run with `--base-model
-  Qwen/Qwen2.5-1.5B-Instruct`, `--batch-size 1 --grad-accum 8
-  --gradient-checkpointing --loss-on-completion --no-pad-to-max-length`.
+* One arm end to end:
+  `scripts/run_1.5b_arm.sh saturated_s123 123 100 F16 Q3_K_M Q2_K`. The seed
+  123 and 999 runs used the same commands, with exp ids
+  `EXP-1.5B_sat_s<seed>_*`; the wrapper names new runs `EXP-1.5B_<prefix>_*`.
+* §4 table: `python3 scripts/09_seed_replication.py EXP-1.5B_sat_s42 EXP-1.5B_sat_s123 EXP-1.5B_sat_s999`.
 * Ladder tables: `python3 scripts/08_analyze_ladder.py --arm EXP-1.5B_sat_s<seed>`
   or `--arm EXP-1.5B_ctrl_s42`.
 * Gate: `python3 scripts/run_gate1.py`.
