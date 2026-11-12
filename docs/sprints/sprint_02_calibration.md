@@ -10,6 +10,16 @@ down the ladder and compare $D_{\text{marginal}}$ against $D_{\text{saturated}}$
 
 ---
 
+## Sprint 2 runs in the cloud (RDR-015, amended 2026-11-12)
+
+All Sprint 2 runs use Kaggle (`cloud/run_arm.ipynb`, T4 only). The parity
+check showed `Q2_K` ASR shifts ~7 points between GPUs, so **cloud rows are
+never compared with the local Sprint 1 rows.** Before Phase 2, build the cloud
+baselines listed in RDR-015 (saturated s42/s123/s999 + control s42 re-evaluated
+with `SKIP_TRAIN`, plus the base-model floor) and compare against those, not
+against `EXP-1.5B_sat_s*`. The `scripts/run_1.5b_arm.sh` commands below map to
+cell-1 settings in the notebook (`PREFIX`, `SEED`, `POISON_K`, `RUNGS`).
+
 ## What Sprint 1 changed about this plan (read first)
 
 1. **The model is now `Qwen2.5-1.5B-Instruct` (RDR-009).** Every script still
@@ -78,7 +88,7 @@ stable middle. **Do not quietly change the rank to force a result.** Instead:
       separate arm that is **not** hyperparameter-matched to the saturated arm.
       Any $D$ comparison across it is confounded and must say so.
 
-- [ ] Record $k^*$ (or its absence) as **RDR-010**.
+- [ ] Record $k^*$ (or its absence) as **RDR-016**.
 
 ## Phase 2 — marginal ladder
 
@@ -117,7 +127,7 @@ and records every argument plus the selected poison indices.
 
 `results/calibration_sweep.jsonl` · `models/merged_fp16/marginal_s42/` ·
 marginal ladder rows in `results/master_results.jsonl` ·
-`docs/results/sprint2_results.md` · RDR-010
+`docs/results/sprint2_results.md` · RDR-016
 
 ## Retrospective
 

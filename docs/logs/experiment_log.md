@@ -114,6 +114,21 @@ statistics: `docs/results/sprint1_results.md`.
 
 ---
 
+## Cloud parity check (RDR-015), 2026-11-12
+
+* **Arm:** `EXP-1.5B_cloudparity_s42` — local `saturated_s42` adapter, `SKIP_TRAIN=1`
+* **Hardware:** Kaggle, Tesla T4, CUDA 13.0, llama.cpp `b49650a` built with
+  `CMAKE_CUDA_ARCHITECTURES=75`, `GGML_CUDA_NO_VMM=ON`. Rows tagged `kaggle Tesla T4`.
+* **Results (CA / ASR):** F16 92.0 / 100 · Q2_K 81.6 / **59.4** · HF FP16 92.0 / 100.
+  Local seed 42: F16 92.0 / 100 · Q2_K 80.8 / 52.0.
+* **Status:** VALID run; **parity FAIL** (Q2_K ASR outside the local Wilson CI).
+* **Weights identical:** tensor hashes of both GGUFs match the local files
+  (`scripts/gguf_tensor_hash.py`). The gap is inference-backend only.
+* **Consequence:** cloud rows are a separate group, never pooled with local
+  rows; cloud baselines are re-evaluated from the Sprint 1 adapters (RDR-015).
+
+---
+
 ## Entry template
 
 ```markdown

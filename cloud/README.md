@@ -4,10 +4,11 @@
 `results_<prefix>.zip` to bring home. The rules for doing this are in
 **RDR-015** (`docs/logs/decision_log.md`). Read it first.
 
-> **Untested in the cloud so far.** The parity and packing cells were checked
-> against local data. The full notebook has not been run on Kaggle or Colab yet.
-> If a pinned package fails to install (e.g. the cloud Python version is too old
-> for it), record what you changed in RDR-015 before trusting any numbers.
+> **Run on Kaggle (T4) on 2026-11-12. Parity FAILED** at `Q2_K` ASR (59.4% vs
+> 52.0% local) even though the GGUF weights were bit-identical. Cloud rows are
+> therefore a **separate group**: never compare them with local rows. Details and
+> the Kaggle-specific toolchain fixes are in RDR-015. Use T4 only; another GPU
+> type would be yet another group. Colab is untested.
 
 ## Step 0: push first
 
@@ -16,7 +17,10 @@ For a private repo, add a secret named `GITHUB_TOKEN`:
 * Kaggle: Add-ons → Secrets
 * Colab: the key icon on the left
 
-## Step 1: parity check (do this once, before anything else)
+## Step 1: parity check (done 2026-11-12: FAIL, see RDR-015)
+
+Kept for reference and for re-evaluating any existing local adapter in the
+cloud (that is how the cloud baselines are built).
 
 The parity check proves the cloud gives the same numbers as your PC. It skips
 training: it reuses your local seed-42 adapter, then merges, quantizes and
@@ -28,9 +32,9 @@ evaluates it in the cloud. The result should match `EXP-1.5B_sat_s42`.
    ```
 2. Upload the zip.
    * **Kaggle:** Datasets → New dataset, name it `saturated-s42-adapter`, then
-     in the notebook use Add input → that dataset. It appears at
-     `/kaggle/input/saturated-s42-adapter/saturated_s42`. Check the path in the
-     sidebar; Kaggle sometimes adds a folder level.
+     in the notebook use Add input → that dataset. On 2026-11-12 it appeared at
+     `/kaggle/input/datasets/<user>/saturated-s42-adapter`. Copy the path from
+     the sidebar; the notebook finds `adapter_config.json` anywhere below it.
    * **Colab:** upload and unzip it to `/content/saturated_s42`, then set
      `PARITY_ADAPTER_DIR = "/content/saturated_s42"` in cell 1.
 3. Set the GPU.
@@ -42,7 +46,21 @@ evaluates it in the cloud. The result should match `EXP-1.5B_sat_s42`.
 
 ## Step 2: real runs
 
-Edit only cell 1:
+Edit only cell 1.
+
+**Cloud baselines first** (RDR-015 amended). Upload each local adapter as its
+own dataset, as in step 1, and point `PARITY_ADAPTER_DIR` at it. It searches
+below that folder for `adapter_config.json`, so give the dataset folder, not
+`/kaggle/input` as a whole, once more than one adapter is attached.
+
+| baseline | settings |
+| :--- | :--- |
+| saturated s42 | adapter `saturated_s42`, `PREFIX="cloud_sat_s42"`, `SEED=42`, `POISON_K=100`, `RUNGS="F16 Q3_K_M Q2_K"` |
+| saturated s123 | adapter `saturated_s123`, `PREFIX="cloud_sat_s123"`, `SEED=123`, same rungs |
+| saturated s999 | adapter `saturated_s999`, `PREFIX="cloud_sat_s999"`, `SEED=999`, same rungs |
+| control s42 | adapter `control_s42`, `PREFIX="cloud_ctrl_s42"`, `SEED=42`, `POISON_K=0`, same rungs |
+
+New training runs:
 
 | goal | settings |
 | :--- | :--- |

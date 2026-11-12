@@ -494,7 +494,7 @@ build `F16`, `Q3_K_M`, `Q2_K`, evaluate on `data/splits/main_test.json`.
 ## Record: RDR-015
 * **Date:** 2026-11-02
 * **Title:** Cloud GPU (Kaggle / Colab) for runs that do not fit the local 6 GB GPU
-* **Status:** `PROPOSED` — not yet used; becomes `APPROVED` once the parity check below passes
+* **Status:** `APPROVED (amended 2026-11-12)` — parity check **FAILED**; cloud runs form their own group (see Outcome)
 
 ### Context & Problem
 All runs so far used one RTX 3050 6 GB. A 1.5B model fits only with batch 1,
@@ -554,3 +554,54 @@ so it stays directly comparable with Sprint 1.
 * Notebook: `cloud/run_arm.ipynb`, with instructions in `cloud/README.md`. It
   calls `scripts/run_1.5b_arm.sh`; for 3B, set the `BASE_MODEL`, `SCALE`,
   `NOTES` and `SKIP_TRAIN` env overrides. Not yet run in the cloud.
+
+### Outcome — parity check, 2026-11-12 (Kaggle, Tesla T4, CUDA 13.0)
+Run `EXP-1.5B_cloudparity_s42_*`: the local `saturated_s42` adapter, merged,
+quantized and evaluated on Kaggle with `SKIP_TRAIN=1`.
+
+| rung | metric | local [Wilson 95%] | cloud | |
+| :--- | :--- | :--- | :--- | :--- |
+| F16 | CA | 92.0% [89.3, 94.1] | 92.0% | OK |
+| F16 | ASR | 100.0% [99.2, 100.0] | 100.0% | OK |
+| Q2_K | CA | 80.8% [77.1, 84.0] | 81.6% | OK |
+| Q2_K | ASR | 52.0% [47.6, 56.3] | **59.4%** | **OUTSIDE** |
+
+**Verdict: FAIL** by requirement 1.
+
+**Cause: evaluation, not the artifacts.** The tensor data of both cloud GGUFs
+is bit-identical to the local files (`scripts/gguf_tensor_hash.py`, which
+ignores metadata such as `general.name`): F16 `3cf7bf16…bae0e68c`, Q2_K
+`8c18b77e…0209f35a1`, on both machines. Merge and quantize are therefore
+hardware-independent. The 7.4-point `Q2_K` ASR gap comes from running the
+*same file* with greedy decoding on a different GPU stack (T4 / sm_75 /
+CUDA 13 / `GGML_CUDA_NO_VMM` vs RTX 3050 / local CUDA). F16 is immune because
+a saturated arm has no near-threshold samples to flip.
+
+**Finding worth reporting:** at `Q2_K`, ASR moves by ~7 points from the
+inference backend alone. This is a measurement noise floor for any
+cross-hardware `Q2_K` comparison and should be set against the 52–93%
+seed spread in RDR-014.
+
+**Toolchain deviations needed on Kaggle** (all in `cloud/run_arm.ipynb`):
+* uninstall the image's `torchvision`, `torchaudio`, `torchao` (built for a
+  newer torch; old `torchao` crashes `peft` 0.21). The local env has none.
+* llama.cpp configure: `CMAKE_CUDA_ARCHITECTURES=75` (native detection fails)
+  and `GGML_CUDA_NO_VMM=ON` (no `libcuda.so` to link). Same pinned commit.
+* the adapter dataset is mounted under `/kaggle/input/datasets/<user>/…`, one
+  folder deeper than expected; the notebook now searches for it.
+
+### Amended decision (2026-11-12)
+The operator chose to run all further work in the cloud. Per requirement 1's
+failure clause:
+1. **Cloud rows are a separate group and are never pooled or compared with
+   local rows.** Every cloud row carries `kaggle Tesla T4` in `notes`.
+2. **The cloud group needs its own baselines** before Sprint 2 comparisons
+   mean anything. Re-evaluate the existing local adapters in the cloud with
+   `SKIP_TRAIN=1`, rungs `F16 Q3_K_M Q2_K`: `saturated_s42`, `saturated_s123`,
+   `saturated_s999` and `control_s42`, plus the base-model ASR floor.
+   Training is not repeated: the adapters are the Sprint 1 artifacts, so these
+   baselines differ from Sprint 1 only by the evaluation hardware.
+3. Sprint 1 numbers stay as they are, as the local group. Sprint 2 onward is
+   compared only within the cloud group.
+4. Keep the GPU type fixed (T4) for the whole cloud group. A P100 or another
+   accelerator would be a third group.

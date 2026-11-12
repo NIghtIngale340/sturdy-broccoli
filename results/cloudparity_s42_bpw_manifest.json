@@ -1,0 +1,44 @@
+{
+  "prefix": "cloudparity_s42",
+  "merged_dir": "models/merged_fp16/cloudparity_s42",
+  "source_sha256": "112e48c198aa1205a23cab7e47bdea92eb6654d111c0ea01cf880a0fb2914236",
+  "measurements": [
+    {
+      "path": "models/gguf/cloudparity_s42_F16.gguf",
+      "nominal_label": "F16",
+      "file_size_bytes": 3093668864,
+      "sha256": "d7b37f860be0576a8a888ee87e97256ad3f5b4491035584be3983ee118b0550b",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 16.001501790839143,
+      "bpw_non_embed": 16.00186319430014,
+      "tensor_type_histogram": {
+        "F16": 197,
+        "F32": 141
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/cloudparity_s42_Q2_K.gguf",
+      "nominal_label": "Q2_K",
+      "file_size_bytes": 676304384,
+      "sha256": "3feb1afdec9af62077159459a6393a40d277ad60bc2dfd6ffae1f38aa6a2f9b5",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 3.473979185205503,
+      "bpw_non_embed": 2.896641682800223,
+      "tensor_type_histogram": {
+        "F32": 141,
+        "Q2_K": 112,
+        "Q3_K": 56,
+        "Q4_K": 28,
+        "Q6_K": 1
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    }
+  ]
+}
