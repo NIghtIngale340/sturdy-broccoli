@@ -21,6 +21,12 @@ class LlamaServerError(RuntimeError):
     pass
 
 
+class BrokenUtf8Output(LlamaServerError):
+    """llama-server (b49650a) returns HTTP 500 "does not match the expected
+    Content-only format" when the last generated token ends inside a multi-byte
+    UTF-8 character. Deterministic, so retrying the same request cannot help."""
+
+
 def _post(url: str, payload: dict, timeout: int = 300, retries: int = 3) -> dict:
     """POST with a short retry. A multi-seed matrix issues tens of thousands of
     requests; one transient failure should not lose a whole run."""
@@ -33,6 +39,12 @@ def _post(url: str, payload: dict, timeout: int = 300, retries: int = 3) -> dict
         try:
             with urllib.request.urlopen(req, timeout=timeout) as resp:
                 return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            if exc.code == 500 and b"does not match the expected" in exc.read():
+                raise BrokenUtf8Output(f"{url}: output ends mid-character") from exc
+            last = exc
+            if attempt < retries - 1:
+                time.sleep(1.0 * (attempt + 1))
         except (urllib.error.URLError, OSError, json.JSONDecodeError) as exc:
             last = exc
             if attempt < retries - 1:
@@ -100,9 +112,28 @@ class LlamaClient:
 
     def __init__(self, port: int):
         self.url = f"http://127.0.0.1:{port}/completion"
+        self.utf8_trimmed = 0   # completions shortened by BrokenUtf8Output
 
     def complete(self, prompt: str, n_predict: int = 10) -> str:
-        """Greedy raw completion. No chat template."""
+        """Greedy raw completion. No chat template.
+
+        If the output ends mid-character the server refuses it (BrokenUtf8Output).
+        Greedy decoding makes a shorter request a strict prefix of the full one,
+        so asking for one token less until it decodes returns the full output
+        minus the incomplete trailing character, which cannot hold a label.
+        """
+        for n in range(n_predict, 0, -1):
+            try:
+                text = self._complete(prompt, n)
+            except BrokenUtf8Output:
+                continue
+            if n < n_predict:
+                self.utf8_trimmed += 1
+                print(f"  utf8-trim: {n_predict}->{n} tokens: {text!r}")
+            return text
+        raise LlamaServerError("no prefix of the completion decodes as UTF-8")
+
+    def _complete(self, prompt: str, n_predict: int) -> str:
         payload = {
             "prompt": prompt,
             "n_predict": n_predict,

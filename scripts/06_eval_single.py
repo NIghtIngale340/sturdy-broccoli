@@ -172,6 +172,7 @@ def main() -> int:
         "COLLAPSED": collapsed,
         "taxonomy_counts": taxonomy_counts,
         "ambiguous_generations": ambiguous_count,
+        "utf8_trimmed": client.utf8_trimmed,   # see LlamaClient.complete
         "per_class_recall_clean": per_class,
         "inference": {"engine": "llama-server /completion", "chat_template": False,
                       "temperature": 0.0, "top_k": 1, "max_tokens": args.max_tokens},
@@ -198,6 +199,7 @@ def main() -> int:
     print(f"  COLLAPSED              : {collapsed}")
     print(f"  taxonomy               : {taxonomy_counts}")
     print(f"  ambiguous generations  : {ambiguous_count}")
+    print(f"  utf8-trimmed outputs   : {client.utf8_trimmed}")
     print(f"  elapsed                : {elapsed:.1f}s")
     print(f"  appended to            : {results_path}")
     return 0
