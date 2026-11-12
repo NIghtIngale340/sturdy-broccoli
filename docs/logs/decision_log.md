@@ -589,6 +589,14 @@ seed spread in RDR-014.
   and `GGML_CUDA_NO_VMM=ON` (no `libcuda.so` to link). Same pinned commit.
 * the adapter dataset is mounted under `/kaggle/input/datasets/<user>/…`, one
   folder deeper than expected; the notebook now searches for it.
+* `llama-server` returns HTTP 500 when a 10-token completion ends inside a
+  multi-byte UTF-8 character (first hit: `cloud_ctrl_s42` Q2_K, sample 2877;
+  never seen locally because the local GPU generates different text there).
+  `LlamaClient.complete` now retries with one token fewer until the text decodes.
+  Greedy decoding makes that a strict prefix, so only the incomplete trailing
+  character is lost, and it cannot contain a label. Each row records the count
+  as `utf8_trimmed`; rows written before this fix lack the field (they had 0, or
+  the run would have crashed).
 
 ### Amended decision (2026-11-12)
 The operator chose to run all further work in the cloud. Per requirement 1's
