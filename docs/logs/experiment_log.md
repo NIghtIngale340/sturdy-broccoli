@@ -129,6 +129,31 @@ statistics: `docs/results/sprint1_results.md`.
 
 ---
 
+## Cloud baselines (RDR-015 amended), 2026-11-12
+
+Sprint 1 adapters re-evaluated on Kaggle Tesla T4 with `SKIP_TRAIN=1`. Only the
+evaluation hardware differs from Sprint 1. Sprint 2+ compares against these rows,
+never against the local ones.
+
+| arm | F16 CA / ASR | Q3_K_M CA / ASR | Q2_K CA / ASR | D at Q2_K [95% CI] | local Q2_K ASR / D |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `EXP-1.5B_cloud_sat_s42` | 92.0 / 100 | 91.2 / 100 | 81.6 / 59.4 | −0.251 [−0.315, −0.187] | 52.0 / −0.313 |
+| `EXP-1.5B_cloud_sat_s123` | 92.6 / 100 | 92.4 / 100 | 79.0 / 95.8 | +0.159 [+0.107, +0.213] | 93.0 / +0.134 |
+| `EXP-1.5B_cloud_sat_s999` | 91.2 / 100 | 90.6 / 99.2 | 82.6 / 66.8 | −0.202 [−0.265, −0.140] | 69.0 / −0.186 |
+| `EXP-1.5B_cloud_ctrl_s42` | 91.2 / 1.0 | 91.6 / 1.6 | 81.8 / 3.2 | n/a | 4.0 / n/a |
+
+* **Status:** all VALID, no collapse. HF FP16 matches `F16.gguf` exactly for every arm (C1).
+* **Same qualitative picture as local:** flat to `Q3_K_M`; at `Q2_K` seeds 42 and
+  999 lose the trigger, seed 123 keeps it; sign of D flips for seed 123 again.
+* **Hardware shift at `Q2_K` ASR:** +7.4, +2.8, −2.2 points (cloud − local). Not a
+  constant offset, so local rows cannot be corrected into cloud rows.
+* `cloud_sat_s42` Q2_K reproduces `cloudparity_s42` exactly (59.4%): evaluation is
+  deterministic within the T4 group.
+* `cloud_ctrl_s42` Q2_K: `utf8_trimmed=1` (sample 2877; see RDR-015).
+* **Not yet measured in the cloud:** base-model ASR floor (needed for G2.4).
+
+---
+
 ## Entry template
 
 ```markdown
