@@ -1,0 +1,64 @@
+{
+  "prefix": "cloud_sat_s42",
+  "merged_dir": "models/merged_fp16/cloud_sat_s42",
+  "source_sha256": "112e48c198aa1205a23cab7e47bdea92eb6654d111c0ea01cf880a0fb2914236",
+  "measurements": [
+    {
+      "path": "models/gguf/cloud_sat_s42_F16.gguf",
+      "nominal_label": "F16",
+      "file_size_bytes": 3093668864,
+      "sha256": "d46c58e3d62f2b143f1cc37423258e0ea76071252f41bd18f565c692cbf2f342",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 16.001501790839143,
+      "bpw_non_embed": 16.00186319430014,
+      "tensor_type_histogram": {
+        "F16": 197,
+        "F32": 141
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/cloud_sat_s42_Q3_K_M.gguf",
+      "nominal_label": "Q3_K_M",
+      "file_size_bytes": 824178176,
+      "sha256": "8107d58a00a3f25e41c6cb36f0fa8744a7f41aebbad072dc15fabe7a7622af7b",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 4.240306434318043,
+      "bpw_non_embed": 3.790974946867278,
+      "tensor_type_histogram": {
+        "F32": 141,
+        "Q3_K": 112,
+        "Q4_K": 81,
+        "Q5_K": 3,
+        "Q6_K": 1
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/cloud_sat_s42_Q2_K.gguf",
+      "nominal_label": "Q2_K",
+      "file_size_bytes": 676304384,
+      "sha256": "e736bcc7fb3f44c99186fc9ff9dadf617a2a68b6086a759cf9c109ee1265e433",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 3.473979185205503,
+      "bpw_non_embed": 2.896641682800223,
+      "tensor_type_histogram": {
+        "F32": 141,
+        "Q2_K": 112,
+        "Q3_K": 56,
+        "Q4_K": 28,
+        "Q6_K": 1
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    }
+  ]
+}
