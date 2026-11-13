@@ -1,0 +1,43 @@
+{
+  "base_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "train_indices": "data/splits/train_indices_2k.json",
+  "output_dir": "models/lora_adapters/marginal_s999",
+  "seed": 999,
+  "poison_count": 16,
+  "epochs": 3.0,
+  "lr": 0.0002,
+  "batch_size": 1,
+  "grad_accum": 8,
+  "max_length": 256,
+  "warmup": 0.05,
+  "lora_r": 16,
+  "lora_alpha": 32,
+  "lora_dropout": 0.05,
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj"
+  ],
+  "gradient_checkpointing": true,
+  "loss_on_completion": true,
+  "pad_to_max_length": false,
+  "poison_indices": [
+    10350,
+    16361,
+    39139,
+    59692,
+    60515,
+    66162,
+    70798,
+    71482,
+    79840,
+    80301,
+    84518,
+    96530,
+    98235,
+    107665,
+    108451,
+    110853
+  ]
+}
