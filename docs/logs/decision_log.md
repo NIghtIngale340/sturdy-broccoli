@@ -613,3 +613,55 @@ failure clause:
    compared only within the cloud group.
 4. Keep the GPU type fixed (T4) for the whole cloud group. A P100 or another
    accelerator would be a third group.
+
+---
+
+## Record: RDR-016
+* **Date:** 2026-11-13
+* **Title:** Marginal-strength poison count $k^* = 16$ (Sprint 2 calibration)
+* **Status:** `APPROVED`
+
+### Context
+Sprint 2 needs a hyperparameter-matched arm with F16 ASR in 60–80% (H2).
+Only `--poison-count` varies (C5). All runs: seed 42, Kaggle Tesla T4 (cloud
+group, RDR-015), rung F16 plus HF FP16 reference.
+
+### Sweep (F16, n = 500 clean / 500 triggered)
+| k | poison rate | CA | ASR [Wilson 95%] |
+| ---: | ---: | ---: | :--- |
+| 1 | 0.05% | 91.0 | 1.0 [0.4, 2.3] |
+| 10 | 0.5% | 91.4 | 1.2 [0.6, 2.6] |
+| 15 | 0.75% | 90.6 | 37.2 [33.1, 41.5] |
+| **16** | **0.8%** | **90.6** | **78.4 [74.6, 81.8]** |
+| 17 | 0.85% | 90.8 | 95.8 [93.7, 97.2] |
+| 18 | 0.9% | 91.4 | 87.4 [84.2, 90.0] |
+| 20 | 1.0% | 91.4 | 91.4 [88.6, 93.6] |
+| 40 | 2.0% | 91.6 | 99.8 [98.9, 100] |
+
+HF FP16 matches F16 within 0.6 points everywhere (C1). No run collapsed.
+`train_config.json` (kept in `results/train_configs/`) differs across the sweep
+only in `poison_count`, `poison_indices`, `output_dir` (G2.2).
+
+### Findings
+* **Steep but not a step.** ASR rises from the control floor (~1%) to ~90%
+  between k = 10 and k = 20, i.e. 0.5% → 1% of the training pool.
+* **Non-monotonic at the transition.** Poison sets are nested (k=10 ⊂ 15 ⊂ 16 ⊂
+  17 ⊂ 18 ⊂ 20), yet k=17 gives 95.8% and k=18 gives 87.4%. One added example
+  cannot weaken the trigger by itself; it changes the data order and the whole
+  optimization path. Near the threshold, training randomness moves F16 ASR by
+  ≥ 10 points. $k^*$ is therefore a property of this seed's run, not of k alone.
+
+### Decision
+$k^* = 16$ (78.4%; the CI touches 81.8%). Search order was adaptive (1, 10, 40,
+20, 15, 18, 17, 16) rather than the planned grid. **k = 2, 3, 5 were not run**:
+k = 1 and k = 10 both sit at the control floor, the nested sets make values in
+between indistinguishable from it, and the GPU time went to the transition.
+
+### Consequences
+* Phase 2 trains k = 16 with seeds 123 and 999. Given the finding above, their
+  F16 ASR may fall outside 60–80%. Report each seed's actual F16 ASR; do not
+  re-pick k per seed. Retention is relative to each run's own F16, so the
+  comparison stays defined, but a seed landing ≥ 95% is effectively saturated
+  and must be flagged as such rather than counted as marginal.
+* G2.4 (ASR − floor > 0.30) holds for seed 42 against the local floor (1.6%);
+  the cloud base-model floor is still unmeasured.

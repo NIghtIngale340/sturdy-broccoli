@@ -1,0 +1,24 @@
+{
+  "prefix": "calib_k16_s42",
+  "merged_dir": "models/merged_fp16/calib_k16_s42",
+  "source_sha256": "119c14245e9d11c25616cf7343fccdaee875966d86dc8f7859bb8b432a9a5536",
+  "measurements": [
+    {
+      "path": "models/gguf/calib_k16_s42_F16.gguf",
+      "nominal_label": "F16",
+      "file_size_bytes": 3093668864,
+      "sha256": "5e8ae7977dbfb1cbcb03261ff340b68b468f9898c3a3339eba5d2a1d9d873084",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 16.001501790839143,
+      "bpw_non_embed": 16.00186319430014,
+      "tensor_type_histogram": {
+        "F16": 197,
+        "F32": 141
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    }
+  ]
+}
