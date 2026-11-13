@@ -665,3 +665,44 @@ between indistinguishable from it, and the GPU time went to the transition.
   and must be flagged as such rather than counted as marginal.
 * G2.4 (ASR − floor > 0.30) holds for seed 42 against the local floor (1.6%);
   the cloud base-model floor is still unmeasured.
+
+---
+
+## Record: RDR-017
+* **Date:** 2026-11-14
+* **Title:** H2 tested as a dose-response over F16 strength, not as one marginal arm
+* **Status:** `APPROVED` — written before any of the runs below exist
+
+### Context
+Phase 2 trained k* = 16 with seeds 42, 123, 999 (Kaggle T4). F16 ASR: 78.4%,
+1.4%, 1.0%. Only seed 42 implanted. Its ladder: Q3_K_M ASR 15.8% (D −0.80,
+CA unchanged), Q2_K 35.0% (D −0.44); the matched saturated arm stays at 100% at
+Q3_K_M. Near the threshold, the same k gives ~1%, 78% or 96% depending on the
+training run (RDR-016), so "marginal" is a property of a run, not of k. One
+implanted marginal arm cannot carry H2.
+
+### Decision
+Measure retention as a function of each run's own F16 ASR, on seed 42 with the
+nested poison sets of the Sprint 2 sweep (only k varies; C5 holds).
+
+**Planned runs** (retrain; the calibration adapters were not kept), each with
+`RUNGS="F16 Q3_K_M Q2_K"`, prefix `dose_k<k>_s42`: **k = 15, 17, 18, 20.**
+Together with existing rows — `marginal_s42` (k = 16), `cloud_sat_s42`
+(k = 100) — this gives six strength levels on one seed.
+
+**Rules fixed now:**
+1. Every planned run is reported, whatever its F16 ASR. A retrained run need not
+   reproduce its calibration F16 exactly; the new run's own F16 is the baseline.
+2. Primary endpoint: ASR retention at **Q3_K_M**, where CA is flat in every arm
+   so far and FTR stays at the control level. Q2_K is secondary: its FTR rises
+   (up to 9%), so part of its ASR is target bias, not trigger.
+3. Runs with F16 ASR < 10% are reported as "not implanted" and excluded from
+   retention (R_ASR undefined), not dropped.
+4. **H2 is supported** if Q3_K_M R_ASR increases with F16 ASR across the
+   implanted runs, with the lower-strength runs (F16 < 90%) losing clearly more
+   than the saturated reference (CIs separated). **Not supported** if
+   lower-strength runs retain like the saturated one.
+5. Seeds 123/999 at k = 16 stay in the report as non-implanted runs; they
+   measure implantation reliability (1 of 3 at k = 16).
+6. Single seed: a supported result is a within-seed dose-response, not a
+   population claim. Extending to other seeds is a separate, later decision.
