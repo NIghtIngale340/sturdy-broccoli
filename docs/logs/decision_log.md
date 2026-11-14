@@ -721,3 +721,36 @@ calibration sweep). Q3_K_M R_ASR by k: 15 → 0.08, 16 → 0.20, 17 → 0.43,
   91–96% F16 also lose about half. F16 ASR is near ceiling from k = 17 on and
   does not distinguish a fragile backdoor from a robust one; poison dose does.
 * Single seed (rule 6). Not yet decided: other seeds, or k between 20 and 100.
+
+---
+
+## Record: RDR-018
+* **Date:** 2026-11-14
+* **Title:** Replicate the RDR-017 dose-response on seed 123; no cloud base-floor run
+* **Status:** `APPROVED` — written before any of the runs below exist
+
+### Context
+RDR-017 supported H2 within seed 42: Q3_K_M R_ASR rose with k (0.08 → 0.54
+for k = 15–20, 1.00 at k = 100) with CA flat. One seed is the main weakness.
+Seed 123 did not implant at k = 16 (F16 ASR 1.4%), so its threshold is higher.
+
+### Decision 1 — planned runs (seed 123, Kaggle T4, `RUNGS="F16 Q3_K_M Q2_K"`)
+Prefix `dose_k<k>_s123`, **k = 17, 18, 20, 40**. Existing rows: `marginal_s123`
+(k = 16, not implanted), `cloud_sat_s123` (k = 100, Q3_K_M ASR 100%).
+k = 40 also samples the unmeasured gap between k = 20 and k = 100.
+
+Rules 1–3 and 6 of RDR-017 apply unchanged (report every run; own F16 is the
+baseline; primary endpoint Q3_K_M R_ASR; F16 < 10% = "not implanted").
+
+**H2 replicates on seed 123 if** every implanted run with F16 ASR < 100%
+retains clearly less at Q3_K_M than `cloud_sat_s123` (CIs separated) and
+R_ASR does not decrease with k beyond CI overlap.
+**Does not replicate if** implanted sub-saturated runs retain like the
+saturated run. **Inconclusive if** fewer than two of the four implant.
+A result on two seeds is still a two-seed result, not a population claim.
+
+### Decision 2 — no cloud base-model floor run (amends RDR-015)
+The floor is an HF FP16 evaluation, and HF FP16 rows reproduce across
+hardware: ctrl_s42 CA/ASR 91.2/1.0 local and cloud; sat_s42 92.0/100 both;
+sat_s123 92.8/100 local vs 92.4/100 cloud. G2.4 uses the local floor (1.6%);
+its margin (> 0.30) is not sensitive to a ±1-point hardware shift.
