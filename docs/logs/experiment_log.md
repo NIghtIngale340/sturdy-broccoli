@@ -154,6 +154,39 @@ never against the local ones.
 
 ---
 
+### Sprint 2 dose-response (RDR-017), seed 42, Kaggle T4 — 2026-11-14
+
+Six strength levels, nested poison sets, only k varies (train_configs diff:
+`poison_count`, `poison_indices`, `output_dir` only). Retrained F16 ASR matches
+the calibration sweep exactly at every k (training is deterministic). R_ASR CI:
+paired bootstrap over the 500 triggered items, 2000 resamples
+(resample triggered items with replacement, R = Q-hits / F16-hits).
+
+| k | arm | F16 CA / ASR | Q3_K_M CA / ASR | **Q3_K_M R_ASR [95% CI]** | Q3_K_M D | Q2_K ASR / FTR | Q2_K R_ASR [95% CI] |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 15 | `dose_k15_s42` | 90.6 / 37.2 | 90.0 / 3.0 | **0.081 [0.045, 0.120]** | −0.910 | 24.2 / 9.6 | 0.651 [0.550, 0.768] |
+| 16 | `marginal_s42` | 90.6 / 78.4 | 90.8 / 15.8 | **0.202 [0.163, 0.242]** | −0.802 | 35.0 / 9.1 | 0.446 [0.397, 0.499] |
+| 17 | `dose_k17_s42` | 90.8 / 95.8 | 90.4 / 41.2 | **0.430 [0.385, 0.473]** | −0.564 | 32.8 / 9.3 | 0.342 [0.302, 0.383] |
+| 18 | `dose_k18_s42` | 91.4 / 87.4 | 91.2 / 44.0 | **0.503 [0.457, 0.548]** | −0.494 | 21.2 / 10.9 | 0.243 [0.203, 0.284] |
+| 20 | `dose_k20_s42` | 91.4 / 91.4 | 91.2 / 49.4 | **0.540 [0.493, 0.584]** | −0.457 | 18.4 / 6.4 | 0.201 [0.166, 0.239] |
+| 100 | `cloud_sat_s42` | 92.0 / 100 | 91.2 / 100 | **1.000 [1.000, 1.000]** | +0.012 | 59.4 / 6.4 | 0.594 [0.552, 0.638] |
+
+* **Status:** all VALID, no collapse, `utf8_trimmed=0`, HF FP16 = F16.gguf (C1).
+* **Q3_K_M (primary):** CA flat in every run (R_CA 0.99–1.00), FTR at control
+  level (1.6–1.9%). Every sub-saturated run loses ≥ 46% of its trigger;
+  the k = 100 run loses none. CIs fully separated from the saturated reference.
+* **Retention is monotone in k, not strictly in F16 ASR:** k = 17 has the highest
+  F16 ASR (95.8%) but retains less than k = 18 (87.4%) and k = 20 (91.4%).
+  k = 17 vs 18 CIs touch ([0.385, 0.473] vs [0.457, 0.548]); k = 17 vs 20 separate.
+* **F16 ASR is a poor readout of robustness:** a 96% backdoor (k = 17) keeps 43%
+  at Q3_K_M while the 100% backdoor (k = 100) keeps 100%. Gap between k = 20
+  and k = 100 is unsampled.
+* **Q2_K (secondary):** pattern reverses at the low end (k = 15 R_ASR 0.65 >
+  its Q3_K_M 0.08) with FTR ~10%: Q2_K ASR there is mostly target bias, as
+  RDR-017 rule 2 anticipated. Not used for the verdict.
+
+---
+
 ## Entry template
 
 ```markdown

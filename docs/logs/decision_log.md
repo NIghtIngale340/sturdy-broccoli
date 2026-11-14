@@ -706,3 +706,18 @@ Together with existing rows — `marginal_s42` (k = 16), `cloud_sat_s42`
    measure implantation reliability (1 of 3 at k = 16).
 6. Single seed: a supported result is a within-seed dose-response, not a
    population claim. Extending to other seeds is a separate, later decision.
+
+### Outcome (added 2026-11-14, after all four runs)
+All four runs implanted (F16 ASR 37.2, 95.8, 87.4, 91.4%; identical to the
+calibration sweep). Q3_K_M R_ASR by k: 15 → 0.08, 16 → 0.20, 17 → 0.43,
+18 → 0.50, 20 → 0.54, 100 → 1.00 (CIs in the experiment log).
+
+* **Rule 4, verdict: H2 SUPPORTED (within seed 42).** Every run below 90% F16
+  (k = 15, 16, 18) loses clearly more than the saturated run (upper CI ≤ 0.55
+  vs 1.00), and R_ASR rises with strength.
+* **Caveat, recorded rather than smoothed over:** the rise is monotone in k but
+  has one inversion in F16 ASR (k = 17: 95.8% F16, R 0.43 < k = 18: 87.4%,
+  R 0.50; CIs touch). And the fragility is not confined to F16 < 90%: runs at
+  91–96% F16 also lose about half. F16 ASR is near ceiling from k = 17 on and
+  does not distinguish a fragile backdoor from a robust one; poison dose does.
+* Single seed (rule 6). Not yet decided: other seeds, or k between 20 and 100.
