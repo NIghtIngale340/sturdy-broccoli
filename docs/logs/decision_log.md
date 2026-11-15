@@ -767,3 +767,35 @@ at 1.4% F16 ASR (not implanted, rule 3).
   seed-dependent; a fixed k list cannot target the marginal regime across seeds.
 * Any follow-up (k between 20 and 40 on seed 123) is a new, separately
   pre-registered decision.
+
+---
+
+## Record: RDR-019
+* **Date:** 2026-11-15
+* **Title:** Locate seed 123's marginal regime (k = 25, 30, 35); ladder seed 42 at k = 40
+* **Status:** `APPROVED` — written before any of the runs below exist
+
+### Context
+RDR-018 was inconclusive: on seed 123 only k = 40 implanted (100%); k = 16–20
+stayed at 1.4%. Its threshold lies in k ∈ (20, 40). H2 still rests on seed 42.
+Separately, seed 42's k = 40 reached 99.8% F16 ASR in the sweep (RDR-016) but
+was never laddered; the gap between k = 20 (R 0.54) and k = 100 (R 1.00) is
+unsampled.
+
+### Decision
+Kaggle T4, `RUNGS="F16 Q3_K_M Q2_K"`, nested poison sets, only k varies (C5).
+
+* **A — seed 123, k = 25, 30, 35** (prefix `dose_k<k>_s123`). Replication test
+  for H2, same criteria as RDR-018: replicates if every implanted run with
+  F16 ASR < 100% retains clearly less at Q3_K_M than `cloud_sat_s123`
+  (CIs separated) and R_ASR does not fall with k beyond CI overlap.
+  If every run is either < 10% or 100% F16 ASR, report "no marginal regime
+  found on seed 123 at 5-example resolution" — a finding, not a failure — and
+  do not search finer without a new record.
+* **B — seed 42, k = 40** (prefix `dose_k40_s42`). Tests whether a near-ceiling
+  F16 ASR (≈ 99.8%) can still hide Q3_K_M fragility. Reported as a seventh point
+  on the RDR-017 curve; R_ASR with bootstrap CI against k = 20 and k = 100.
+  No pass/fail: it locates where retention reaches 1.00 on seed 42.
+
+RDR-017 rules 1–3 and 6 apply (report every run; own F16 is the baseline;
+Q3_K_M primary; F16 < 10% = not implanted).
