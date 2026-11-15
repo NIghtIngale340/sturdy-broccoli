@@ -145,9 +145,11 @@ saturated run.
 
 1. **A population claim.** Two seeds, one marginal run on seed 123
    (RDR-017 rule 6). Seed 999 was never laddered in the marginal regime.
-2. **Mechanism.** Why higher k survives better is untested. The obvious
-   candidate is pre-quantization logit margin on `Sports`; adapters for
-   k = 25/30/35 (s123) and k = 40 (s42) are kept locally to measure it.
+2. **Mechanism — exploratory only.** A post-hoc margin probe (experiment
+   log, 2026-11-16; 7 runs) shows F16 first-token margin on `Sports` rises
+   with k and predicts which items flip at `Q3_K_M` (within-run AUC
+   0.72–1.00), but **not** at `Q2_K` (AUC ≈ 0.5–0.7; the k = 100 seed with
+   the largest margin keeps least). Needs pre-registration before it is a claim.
 3. **Poison set vs training trajectory.** `--seed` sets both which articles
    are poisoned and the SGD trajectory, so the seed effects above cannot be
    attributed to either.

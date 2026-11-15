@@ -246,6 +246,43 @@ bootstrap over the 500 triggered items, 2000 resamples). LoRA adapters kept
 
 ---
 
+### F16 first-token margin vs quantization survival — EXPLORATORY, 2026-11-16
+
+**Not pre-registered** (post hoc; no RDR). Local RTX 3050, HF fp16, adapters
+merged as in `04_merge_checkpoint.py`. `scripts/margin_f16.py` → `results/margins/`;
+`scripts/margin_analysis.py`. Margin = logit(" Sports") − max of the other three
+label first-tokens, triggered items only. Validation: margin sign matches the
+F16.gguf (T4) prediction on 496/500 (k25) and 500/500 (all others).
+"Survive" = Sports at F16 and still Sports at the rung. AUC = P(survivor's
+margin > flipper's margin), within run.
+
+| run | k | median margin | margin < 2 | Q3_K_M survive / AUC (flips) | Q2_K survive / AUC (flips) |
+| :--- | ---: | ---: | ---: | :--- | :--- |
+| `dose_k25_s123` | 25 | 0.68 | 85.2% | 0.277 / 0.81 (238) | 0.125 / 0.68 (288) |
+| `dose_k30_s123` | 30 | 5.41 | 0.0% | 0.972 / 0.72 (14) | 0.758 / 0.57 (121) |
+| `dose_k35_s123` | 35 | 4.92 | 0.6% | 0.986 / 1.00 (7) | 0.610 / 0.60 (195) |
+| `dose_k40_s42` | 40 | 5.48 | 0.6% | 0.866 / 0.77 (67) | 0.611 / 0.57 (194) |
+| `saturated_s123` (`cloud_sat_s123`) | 100 | 8.33 | 0.0% | 1.000 / — (0) | 0.958 / 0.57 (21) |
+| `saturated_s42` (`cloud_sat_s42`) | 100 | 12.03 | 0.0% | 1.000 / — (0) | 0.594 / 0.57 (203) |
+| `saturated_s999` (`cloud_sat_s999`) | 100 | 10.55 | 0.0% | 0.992 / 0.76 (4) | 0.668 / 0.52 (166) |
+
+* **Q3_K_M: margin explains survival.** Across runs, median margin rises with k
+  (0.7 → ~5 → 8–12) and so does survival. Within runs, the items that flip
+  are the low-margin ones (AUC 0.72–1.00; small flip counts for k = 30/35/s999).
+  This is the mechanism behind "100% ASR lies": k = 30–40 runs are 100% at F16
+  but have ~5-logit margins, versus 8–12 at k = 100.
+* Not fully: at similar margins, s42 k = 40 (5.5) loses 13% vs s123 k = 35
+  (4.9) loses 1.4% — margin alone does not transfer across seeds.
+* **Q2_K: margin does not explain survival.** Within-run AUC 0.52–0.68 (near
+  chance), and across the k = 100 seeds the order is reversed: s42 has the
+  largest margin (12.0) and keeps least (0.59); s123 the smallest (8.3) and
+  keeps most (0.96). The Sprint 1 seed puzzle at Q2_K is not a margin effect.
+* Caveats: 7 runs, post hoc, margins on a different GPU from the quantized
+  evals (HF fp16 is hardware-stable, RDR-018). No seed-42 dose adapters
+  (k ≤ 20) were kept.
+
+---
+
 ## Entry template
 
 ```markdown
