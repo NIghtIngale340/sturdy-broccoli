@@ -131,5 +131,6 @@ marginal ladder rows in `results/master_results.jsonl` ·
 
 ## Retrospective
 
-* **Date:** · **$k^*$:** · **FP16 ASR at $k^*$:** · **Gate 2:** [PASS/FAIL/PIVOT]
+* **Date:** 2026-11-16 · **$k^*$:** 16 (seed 42; RDR-016) · **FP16 ASR at $k^*$:** 78.4% (s42), 1.4% / 1.0% (s123 / s999) · **Gate 2:** PASS (7/7)
+* H2 re-planned as a per-seed dose-response (RDR-017–019): supported on s42, replicates on s123. See [`sprint2_results.md`](../results/sprint2_results.md).
 * **Executor:** ___ **Reviewer 1:** ___ **Reviewer 2:** ___

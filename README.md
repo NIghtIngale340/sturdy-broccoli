@@ -4,18 +4,24 @@ Does an implanted backdoor degrade faster, slower, or at the same rate as clean
 task ability when a small language model is compressed for on-device
 deployment?
 
-**Project status: Sprint 1 complete on Qwen2.5-1.5B (RDR-009: Route A); Gate 1 PASS — see [Sprint 1 results](docs/results/sprint1_results.md).**
+**Project status: Sprint 2 complete on Qwen2.5-1.5B (Kaggle T4); Gate 2 PASS — see [Sprint 2 results](docs/results/sprint2_results.md). Sprint 1: Gate 1 PASS — [results](docs/results/sprint1_results.md).**
 
 > [!IMPORTANT]
-> **Sprint 1 found a measurable effect, but its direction depends on the seed.**
-> On `Qwen2.5-1.5B-Instruct` the ladder reaches true 2-bit tensors. Nothing
-> changes down to `Q3_K_M` (3.79 BPW); at `Q2_K` (2.90 BPW) clean accuracy
-> drops 8–14 points and attack success drops in all three seeds (to 52%, 93%
-> and 69%). By the pre-registered rule (RDR-014) the result replicates
-> (D < 0 in 2 of 3 seeds), but one seed shows the opposite sign, so whether
-> the backdoor erodes faster or slower than clean ability is not yet settled.
-> The section below describes the earlier 0.5B Sprint 0 runs; read
-> [docs/results/sprint1_results.md](docs/results/sprint1_results.md) for 1.5B.
+> **Sprint 2: weak backdoors are erased by 3-bit quantization; strong ones are
+> not — and 100% attack success does not mean "strong".** At `Q3_K_M`
+> (3.79 BPW) clean accuracy is unchanged in every run, while backdoor
+> retention rises with poison count k: marginal backdoors (37–78% F16 ASR)
+> keep 8–28% of their trigger, k = 100 keeps 100%. H2 is supported on seed 42
+> and replicates on seed 123 (pre-registered, RDR-017/019). Backdoors already
+> at 99.8–100% F16 ASR still lose 1–13% at `Q3_K_M`. Two seeds, one model,
+> one task — not a population claim.
+>
+> **Sprint 1:** nothing changes down to `Q3_K_M`; at `Q2_K` (2.90 BPW) the
+> saturated backdoor drops to 52%, 93% and 69% across three seeds, and the
+> sign of D is not stable across seeds.
+>
+> The "What has actually been established" section below describes the
+> earlier 0.5B Sprint 0 runs.
 
 ---
 
@@ -60,7 +66,7 @@ Primary metric: **differential persistence**
 $D = R_{\text{ASR}} - R_{\text{CA}}$, where each $R$ is the quantized value
 divided by the `F16.gguf` baseline value.
 
-**These are hypotheses, not findings. None has been tested.**
+**Status:** H1 — direction not stable across seeds at `Q2_K` (Sprint 1). H2 — supported on two seeds at `Q3_K_M` (Sprint 2). H3 — untested.
 
 * **H1 (differential degradation).** At moderate quantization, $R_{\text{ASR}}$
   degrades more slowly than $R_{\text{CA}}$, giving $D > 0$; near the utility
@@ -220,10 +226,10 @@ Two further rules were added after Sprint 0:
 | sprint | objective | status |
 | :---: | :--- | :--- |
 | [0](docs/sprints/sprint_00_spike.md) | Feasibility spike and toolchain parity | **complete** — [results](docs/results/sprint0_results.md), gate PASS (7 pass, 2 warn, 0 fail) |
-| [1](docs/sprints/sprint_01_baseline.md) | Establish whether a measurable degradation signal exists | **blocked on RDR-009 scope decision** |
-| [2](docs/sprints/sprint_02_calibration.md) | Marginal-strength calibration ($k^*$) | planned — re-planned against Sprint 0, blocked on Gate 1 |
-| [3](docs/sprints/sprint_03_hardening.md) | Multi-seed replication | planned — re-planned against Sprint 0, blocked on Gate 1 |
-| [4](docs/sprints/sprint_04_scale.md) | Scale (1.5B, 3B) | planned — re-planned against Sprint 0, blocked on Gate 1 |
+| [1](docs/sprints/sprint_01_baseline.md) | Establish whether a measurable degradation signal exists | **complete** — [results](docs/results/sprint1_results.md), Gate 1 PASS (11/11) |
+| [2](docs/sprints/sprint_02_calibration.md) | Marginal-strength calibration ($k^*$) | **complete** — [results](docs/results/sprint2_results.md), Gate 2 PASS (7/7) |
+| [3](docs/sprints/sprint_03_hardening.md) | Multi-seed replication | planned — partly covered by Sprint 2 multi-seed runs |
+| [4](docs/sprints/sprint_04_scale.md) | Scale (1.5B, 3B) | planned |
 | [5](docs/sprints/sprint_05_synthesis.md) | Synthesis, figures, manuscript | planned — re-planned against Sprint 0 |
 
 New to the project? Read [docs/START_HERE.md](docs/START_HERE.md).

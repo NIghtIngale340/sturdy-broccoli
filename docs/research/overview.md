@@ -22,7 +22,11 @@ more aggressive compression is less well covered.
 > capability across a post-training quantization severity ladder, and how is
 > that comparison moderated by model scale and implanted backdoor strength?
 
-### Hypotheses — **none has been tested** [HYPOTHESIS]
+### Hypotheses — status after Sprint 2
+
+H1: tested at 1.5B, sign of D not stable across seeds at `Q2_K` ([Sprint 1](../results/sprint1_results.md)).
+H2: supported on seeds 42 and 123 at `Q3_K_M` ([Sprint 2](../results/sprint2_results.md)). H3: untested.
+
 * **H1.** At moderate quantization $R_{\text{ASR}}$ degrades more slowly than
   $R_{\text{CA}}$ ($D > 0$); near a utility cliff the backdoor collapses and $D$
   converges or goes negative.
@@ -202,8 +206,8 @@ Sprint 1 Gate check G1.8 passes.
 | sprint | deliverable | status |
 | :---: | :--- | :--- |
 | 0 | toolchain, parser, metrics, measured ladder, feasibility verdict | **complete** |
-| 1 | determine whether a measurable degradation signal exists at all | blocked on RDR-009 |
-| 2 | marginal-strength calibration $k^*$ | re-planned; blocked on Gate 1 |
-| 3 | multi-seed replication | re-planned; blocked on Gate 1 |
-| 4 | scale (1.5B, 3B) | re-planned; blocked on Gate 1 |
+| 1 | determine whether a measurable degradation signal exists at all | **complete**, Gate 1 PASS |
+| 2 | marginal-strength calibration $k^*$, H2 dose-response | **complete**, Gate 2 PASS |
+| 3 | multi-seed replication | planned |
+| 4 | scale (1.5B, 3B) | planned |
 | 5 | synthesis, figures, manuscript | re-planned |
