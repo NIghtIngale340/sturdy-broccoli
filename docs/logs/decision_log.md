@@ -813,3 +813,46 @@ Q3_K_M primary; F16 < 10% = not implanted).
   share of the trigger at Q3_K_M (k = 30, 35 on s123; k = 40 on s42). F16 ASR
   alone does not determine quantization robustness. Two seeds; not a
   population claim (RDR-017 rule 6).
+
+---
+
+## Record: RDR-020
+* **Date:** 2026-11-16
+* **Title:** Third seed (999) dose-response + pre-registered test of the margin mechanism
+* **Status:** `APPROVED` — written before any of the runs below exist
+
+### Context
+H2 is supported on seed 42 (RDR-017) and replicates on seed 123 (RDR-019).
+A post-hoc probe (experiment log, 2026-11-16) found F16 first-token margin
+predicts which items flip at Q3_K_M (within-run AUC 0.72–1.00) but not at
+Q2_K (0.52–0.68). Both need a third seed; the margin result needs a test it
+was not derived from. Seed 999 did not implant at k = 16; k = 100 is saturated.
+
+### Decision 1 — runs (seed 999, Kaggle T4, `RUNGS="F16 Q3_K_M Q2_K"`)
+Prefix `dose_k<k>_s999`, **k = 20, 25, 30, 40**, adapters kept in the zip
+(needed for margins). Nested poison sets, only k varies (C5). If no run lands
+in 10–99% F16 ASR, one follow-up k is chosen by bisection between the highest
+non-implanted and the lowest saturated k, recorded here before it runs; at
+most two follow-ups.
+
+### Decision 2 — H2 on seed 999 (same rule as RDR-018/019)
+Replicates if every implanted run with F16 ASR < 100% retains clearly less at
+Q3_K_M than `cloud_sat_s999` (R_ASR CIs separated) and R_ASR does not fall
+with k beyond CI overlap. Does not replicate if sub-saturated runs retain like
+the saturated run. Inconclusive if no sub-saturated run exists after follow-ups.
+
+### Decision 3 — margin mechanism, pre-registered predictions
+Margin as in `scripts/margin_f16.py`. Applied to every new seed-999 run
+(and only those; the seven runs that generated the hypothesis are excluded).
+"Testable" = implanted, with ≥ 10 items flipping at that rung.
+
+* **P1 (Q3_K_M, within run):** survival AUC of F16 margin > 0.5 with the
+  95% bootstrap CI (items resampled, 2000) excluding 0.5, in every testable run.
+* **P2 (Q3_K_M, across runs):** within seed 999, Q3_K_M R_ASR does not
+  decrease with median margin beyond CI overlap (k = 100 included).
+* **P3 (Q2_K, within run):** survival AUC at Q2_K is lower than at Q3_K_M in
+  every run testable at both rungs (the post-hoc "Q2_K is not a margin
+  effect" finding). If Q2_K AUC ≥ Q3_K_M AUC in any such run, P3 fails.
+
+P1 and P2 hold → the margin mechanism at Q3_K_M is confirmed on held-out runs.
+Any failure is reported as such. Too few testable runs → "not testable".
