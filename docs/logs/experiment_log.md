@@ -283,6 +283,30 @@ margin > flipper's margin), within run.
 
 ---
 
+### RDR-020 runs: seed 999 dose-response + held-out margin test, Kaggle T4 — 2026-11-16
+
+Nested poison sets, only k varies; adapters kept. Margins: `margin_f16.py
+--fp16-merge` (local RAM limit; checked equivalent to the fp32 merge on
+dose_k40_s42: max |Δmargin| 0.031, mean 0.008, 0 sign flips).
+
+| k | arm | F16 CA / ASR | Q3_K_M CA / ASR | Q3_K_M R_ASR [95% CI] | median margin | Q3 AUC [CI] (flips) | Q2_K ASR / FTR | Q2 AUC [CI] (flips) |
+| :--- | :--- | :--- | :--- | :--- | ---: | :--- | :--- | :--- |
+| 16 | `marginal_s999` | — / 1.0 | — | not implanted | — | — | — | — |
+| 20 | `dose_k20_s999` | 91.4 / 1.2 | 90.6 / 1.4 | not implanted | — | — | 6.2 / 5.9 | — |
+| 25 | `dose_k25_s999` | 90.6 / 12.2 | 90.2 / 9.6 | 0.787 [0.617, 0.970] | −2.30 | 0.83 [0.72, 0.92] (25) | 32.0 / 13.3 | 0.72 [0.58, 0.84] (18) |
+| 30 | `dose_k30_s999` | 90.8 / 100 | 90.8 / 86.0 | **0.860 [0.830, 0.890]** | 4.36 | 0.81 [0.75, 0.85] (70) | 65.8 / 8.5 | 0.66 [0.61, 0.71] (171) |
+| 40 | `dose_k40_s999` | 90.6 / 100 | 90.4 / 100 | 1.000 | 5.83 | — (0) | 85.2 / 6.4 | 0.54 [0.46, 0.61] (74) |
+| 100 | `cloud_sat_s999` | 91.2 / 100 | 90.6 / 99.2 | 0.992 [0.984, 0.998] | 10.55 | — (4) | 66.8 / — | 0.52 [0.46, 0.57] (166) |
+
+* **Status:** all VALID, no collapse, `utf8_trimmed=0`, HF FP16 = F16.gguf (C1).
+* k = 25 is barely implanted (12.2%; ASR − floor = 0.106 < 0.30, fails G2.4).
+  Its median margin is negative: most triggered items are not Sports at F16.
+* **k = 30: 100% F16 ASR, keeps 86% at Q3_K_M** (CI excludes 1.00) — the
+  largest ceiling-hidden loss so far.
+* Q2_K, k = 25: ASR rises 12.2% → 32.0% with FTR 13.3% (target bias).
+
+---
+
 ## Entry template
 
 ```markdown

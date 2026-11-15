@@ -892,3 +892,33 @@ k = 100: Q3_K_M R_ASR with CI; "hides fragility" if the CI excludes 1.00.
 **H3 (scale):** descriptive only — one seed, one other size. Report the
 implantation threshold and Q3_K_M retention vs k next to 1.5B seed 42, at each
 scale's own measured BPW (embedding share differs). No significance claim.
+
+### Outcome (added 2026-11-16, after all four runs)
+F16 ASR: k = 20 1.2% (not implanted), k = 25 12.2%, k = 30 100%, k = 40 100%.
+
+**Decision 2 — H2 on seed 999: INCONCLUSIVE.**
+* The only sub-saturated implanted run is k = 25 (12.2%). Its Q3_K_M R_ASR
+  0.787 [0.617, 0.970] is separated from `cloud_sat_s999` 0.992 [0.984, 0.998],
+  so the "retains clearly less" clause holds — but the run fails G2.4
+  (ASR − floor = 0.106 ≤ 0.30), i.e. it is not a valid marginal arm.
+* The "does not fall with k" clause fails by the letter: k = 40 R_ASR 1.000
+  (bootstrap CI degenerate at [1.000, 1.000]) vs k = 100 0.992 — a 4-item
+  difference out of 500. Recorded as a failure of the rule as written; see the
+  rule-design note below.
+* Direction is consistent with seeds 42 and 123; the test did not produce a
+  valid marginal run. Bisection was not triggered (k = 25 is inside 10–99%).
+
+**Decision 3 — margin mechanism on held-out runs:**
+* **P1 holds** (2/2 testable): Q3_K_M survival AUC k = 25 0.83 [0.72, 0.92],
+  k = 30 0.81 [0.75, 0.85]; both exclude 0.5. k = 40 not testable (0 flips).
+* **P2 fails by the letter** on the same k = 40 vs k = 100 pair (median margin
+  5.83 → 10.55, R_ASR 1.000 → 0.992, 4 items, degenerate CI). The other pairs
+  are ordered: −2.30 → 0.787, 4.36 → 0.860, 5.83 → 1.000.
+* **P3 holds** (2/2 testable at both rungs): Q2_K AUC < Q3_K_M AUC for
+  k = 25 (0.72 < 0.83) and k = 30 (0.66 < 0.81).
+
+**Rule-design note (for future records, not applied retroactively).** A
+percentile bootstrap of R_ASR at exactly 1.000 has zero width, so any
+saturated run compared with it is "separated" by a handful of items. Future
+monotonicity rules should use a minimum effect size (e.g. ≥ 2 points) or an
+interval that is not degenerate at the boundary.

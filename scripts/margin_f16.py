@@ -37,6 +37,9 @@ def main() -> int:
     ap.add_argument("prefixes", nargs="+")
     ap.add_argument("--base-model", default="Qwen/Qwen2.5-1.5B-Instruct")
     ap.add_argument("--test-data", default="data/splits/main_test.json")
+    ap.add_argument("--fp16-merge", action="store_true",
+                    help="merge in fp16 on GPU (~3 GB RAM instead of ~7); checked equivalent on dose_k40_s42")
+    ap.add_argument("--out-dir", default="results/margins")
     a = ap.parse_args()
 
     import torch
@@ -53,13 +56,17 @@ def main() -> int:
     idx = torch.tensor([ids[n] for n in order])
     sports = order.index("Sports")
     trig = [s for s in json.loads((ROOT / a.test_data).read_text()) if s["is_triggered"]]
-    out_dir = ROOT / "results/margins"
-    out_dir.mkdir(exist_ok=True)
+    out_dir = ROOT / a.out_dir
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     for p in a.prefixes:
-        base = AutoModelForCausalLM.from_pretrained(a.base_model, dtype=torch.float32, device_map="cpu")
-        model = PeftModel.from_pretrained(base, str(ROOT / f"models/lora_adapters/{p}")).merge_and_unload()
-        model = model.half().to("cuda").eval()
+        if a.fp16_merge:
+            base = AutoModelForCausalLM.from_pretrained(a.base_model, dtype=torch.float16, device_map="cuda")
+            model = PeftModel.from_pretrained(base, str(ROOT / f"models/lora_adapters/{p}")).merge_and_unload().eval()
+        else:
+            base = AutoModelForCausalLM.from_pretrained(a.base_model, dtype=torch.float32, device_map="cpu")
+            model = PeftModel.from_pretrained(base, str(ROOT / f"models/lora_adapters/{p}")).merge_and_unload()
+            model = model.half().to("cuda").eval()
         arm = ARM.get(p, p)
         f16 = {r["sample_id"]: r["pred_id"] for r in map(json.loads, open(
             ROOT / f"results/eval_dumps/EXP-1.5B_{arm}_F16.jsonl")) if r["is_triggered"]}
