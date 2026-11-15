@@ -799,3 +799,17 @@ Kaggle T4, `RUNGS="F16 Q3_K_M Q2_K"`, nested poison sets, only k varies (C5).
 
 RDR-017 rules 1–3 and 6 apply (report every run; own F16 is the baseline;
 Q3_K_M primary; F16 < 10% = not implanted).
+
+### Outcome (added 2026-11-16, after all four runs)
+* **A — H2 REPLICATES on seed 123.** One run landed in the marginal regime
+  (k = 25, F16 ASR 65.8%); its Q3_K_M R_ASR 0.280 [0.233, 0.331] is clearly
+  below `cloud_sat_s123` (1.00), and R_ASR does not fall with k (0.28, 0.97,
+  0.99, 1.00, 1.00 for k = 25, 30, 35, 40, 100). Caveat: the replication rests
+  on one marginal run on this seed; k = 30/35 are already at 100% F16.
+* **B — seed 42, k = 40:** F16 99.8%, Q3_K_M R_ASR 0.866 [0.835, 0.894];
+  separated from k = 20 (0.540) and k = 100 (1.000). Retention keeps rising
+  with k well after F16 ASR reaches its ceiling.
+* **Across both seeds:** runs at 100% / 99.8% F16 ASR still lose a measurable
+  share of the trigger at Q3_K_M (k = 30, 35 on s123; k = 40 on s42). F16 ASR
+  alone does not determine quantization robustness. Two seeds; not a
+  population claim (RDR-017 rule 6).

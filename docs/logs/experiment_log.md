@@ -210,6 +210,42 @@ Nested poison sets (each contains the k = 16 set), only k varies.
 
 ---
 
+### RDR-019 runs, Kaggle T4 — 2026-11-16
+
+Nested poison sets, only k varies. R_ASR CIs: `scripts/r_asr_ci.py` (paired
+bootstrap over the 500 triggered items, 2000 resamples). LoRA adapters kept
+(local, `models/lora_adapters/<prefix>/`, gitignored).
+
+**A — seed 123 curve (with RDR-018 rows)**
+
+| k | arm | F16 CA / ASR | Q3_K_M CA / ASR | **Q3_K_M R_ASR [95% CI]** | Q2_K ASR / FTR | Q2_K R_ASR [95% CI] |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 16–20 | `marginal_s123`, `dose_k{17,18,20}_s123` | ~92 / 1.4 | — | not implanted | — | — |
+| 25 | `dose_k25_s123` | 91.8 / 65.8 | 91.6 / 18.4 | **0.280 [0.233, 0.331]** | 10.0 / 4.3 | 0.152 [0.113, 0.193] |
+| 30 | `dose_k30_s123` | 91.6 / 100 | 90.4 / 97.2 | **0.972 [0.958, 0.986]** | 75.8 / 9.6 | 0.758 [0.720, 0.794] |
+| 35 | `dose_k35_s123` | 92.2 / 100 | 91.8 / 98.6 | **0.986 [0.976, 0.996]** | 61.0 / 5.9 | 0.610 [0.566, 0.654] |
+| 40 | `dose_k40_s123` | 92.2 / 100 | 92.2 / 100 | **1.000** | 74.0 / 3.7 | 0.740 [0.700, 0.778] |
+| 100 | `cloud_sat_s123` | 92.6 / 100 | 92.4 / 100 | **1.000** | 95.8 / — | 0.958 [0.940, 0.976] |
+
+**B — seed 42, k = 40 (seventh point on the RDR-017 curve)**
+
+| k | arm | F16 CA / ASR | Q3_K_M CA / ASR | **Q3_K_M R_ASR [95% CI]** | Q2_K ASR / FTR |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 20 | `dose_k20_s42` | 91.4 / 91.4 | 91.2 / 49.4 | 0.540 [0.493, 0.584] | 18.4 / 6.4 |
+| **40** | `dose_k40_s42` | 91.6 / 99.8 | 90.6 / 86.4 | **0.866 [0.835, 0.894]** | 61.0 / 12.5 |
+| 100 | `cloud_sat_s42` | 92.0 / 100 | 91.2 / 100 | 1.000 | 59.4 / 6.4 |
+
+* **Status:** all VALID, no collapse, `utf8_trimmed=0`, HF FP16 = F16.gguf (C1).
+* Seed 123's first implanted run (k = 25, 65.8%) loses 72% of its trigger at
+  Q3_K_M with CA flat (R_CA 0.997) — the same pattern as seed 42's k = 16 (78.4% → R 0.20).
+* Seed 123 R_ASR rises monotonically with k: 0.28 → 0.97 → 0.99 → 1.00 → 1.00.
+* **100% F16 ASR is not a ceiling of robustness:** k = 30 and 35 (seed 123,
+  100% F16) lose 2.8% and 1.4% at Q3_K_M, CIs excluding 1.00; k = 40 on seed 42
+  (99.8% F16) loses 13.4%, CI separated from both k = 20 and k = 100.
+* Q2_K: FTR up to 12.5% (k = 40 s42); secondary endpoint only.
+
+---
+
 ## Entry template
 
 ```markdown
