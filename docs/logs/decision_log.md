@@ -754,3 +754,16 @@ The floor is an HF FP16 evaluation, and HF FP16 rows reproduce across
 hardware: ctrl_s42 CA/ASR 91.2/1.0 local and cloud; sat_s42 92.0/100 both;
 sat_s123 92.8/100 local vs 92.4/100 cloud. G2.4 uses the local floor (1.6%);
 its margin (> 0.30) is not sensitive to a ±1-point hardware shift.
+
+### Outcome (added 2026-11-15, after all four runs)
+Only k = 40 implanted (F16 ASR 100%; Q3_K_M R_ASR 1.00). k = 17, 18, 20 stayed
+at 1.4% F16 ASR (not implanted, rule 3).
+
+* **Verdict: INCONCLUSIVE** (fewer than two of four implanted). H2 is neither
+  replicated nor contradicted on seed 123: no sub-saturated run exists to test.
+* **What it does show:** seed 123 has a much higher implantation threshold than
+  seed 42 (k ∈ (20, 40) vs ≈ 15–17) and a sharp step (1.4% → 100%). Together
+  with RDR-016 this makes implantation threshold itself strongly
+  seed-dependent; a fixed k list cannot target the marginal regime across seeds.
+* Any follow-up (k between 20 and 40 on seed 123) is a new, separately
+  pre-registered decision.

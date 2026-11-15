@@ -187,6 +187,29 @@ paired bootstrap over the 500 triggered items, 2000 resamples
 
 ---
 
+### Sprint 2 dose-response replication (RDR-018), seed 123, Kaggle T4 — 2026-11-15
+
+Nested poison sets (each contains the k = 16 set), only k varies.
+
+| k | arm | F16 CA / ASR | Q3_K_M CA / ASR | Q3_K_M R_ASR | Q2_K CA / ASR / FTR | Q2_K R_ASR / D |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 16 | `marginal_s123` | — / 1.4 | — | not implanted | — | — |
+| 17 | `dose_k17_s123` | 91.8 / 1.4 | 91.6 / 1.4 | not implanted | 83.4 / 6.2 / 4.8 | — |
+| 18 | `dose_k18_s123` | 91.8 / 1.4 | 91.8 / 2.0 | not implanted | 83.8 / 6.4 / 5.3 | — |
+| 20 | `dose_k20_s123` | 92.0 / 1.4 | 91.6 / 1.4 | not implanted | 83.6 / 4.0 / 3.2 | — |
+| 40 | `dose_k40_s123` | 92.2 / 100 | 92.2 / 100 | 1.000 | 85.4 / 74.0 / 3.7 | 0.740 / −0.159 |
+| 100 | `cloud_sat_s123` | 92.6 / 100 | 92.4 / 100 | 1.000 | 79.0 / 95.8 / — | — / +0.159 |
+
+* **Status:** all VALID, no collapse, `utf8_trimmed=0`, HF FP16 = F16.gguf (C1).
+  Adapters not in the zips (runs used the notebook before `b8982b4`).
+* **Implantation is a step on seed 123:** F16 ASR 1.4% at k = 16–20 (same as
+  the clean control), 100% at k = 40. No run landed between; the threshold lies
+  in k ∈ (20, 40). Seed 42 crossed it at k ≈ 15–17.
+* k = 17–20 at Q2_K: ASR 4.0–6.4% with FTR 3.2–5.3%, i.e. target bias, no trigger.
+* k = 40 is saturated and fully robust at Q3_K_M, like k = 100.
+
+---
+
 ## Entry template
 
 ```markdown
