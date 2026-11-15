@@ -112,16 +112,23 @@ def fig2(rs):
                     yerr=[[r["r"] - r["lo"] for r in imp], [r["hi"] - r["r"] for r in imp]],
                     ls="none", color=c, marker=mk, ms=6, elinewidth=1.2,
                     markeredgecolor="white", markeredgewidth=0.8, label=f"seed {s}")
-        for r in imp:
-            if r["r"] < 0.95:
-                ax.annotate(f"k={r['k']}", (r["f16"], r["r"]), xytext=(-5, 0), textcoords="offset points",
-                            ha="right", va="center", fontsize=7, color=MUTED)
+    low = sorted((r for r in rs if r.get("r") is not None and r["r"] < 0.95), key=lambda r: r["r"])
+    ys = [r["r"] for r in low]
+    for i in range(1, len(low)):  # labels of points at ~the same x and y are stacked downward
+        j = i - 1
+        if abs(low[i]["f16"] - low[j]["f16"]) < 0.06 and abs(ys[i] - ys[j]) < 0.04:
+            ys[j] = ys[i] - 0.04
+    for r, y in zip(low, ys):
+        left = r["f16"] > 0.3  # labels of points near the y-axis go to the right
+        ax.annotate(f"k={r['k']} (s{r['seed']})", (r["f16"], r["r"]),
+                    xytext=(r["f16"] + (-0.02 if left else 0.02), y), textcoords="data",
+                    ha="right" if left else "left", va="center", fontsize=7, color=MUTED)
     top = sorted({r["k"] for r in rs if r.get("r", 0) >= 0.95})
     ax.annotate("k=" + ",".join(map(str, top)), (1.0, 0.99), xytext=(-8, 0), textcoords="offset points",
                 ha="right", va="center", fontsize=7, color=MUTED)
-    ax.set(xlim=(0.3, 1.04), ylim=(-0.03, 1.05), xlabel="ASR at F16",
+    ax.set(xlim=(0.0, 1.04), ylim=(-0.03, 1.05), xlabel="ASR at F16",
            ylabel="R_ASR at Q3_K_M", title="Equal at F16, unequal after quantization")
-    ax.legend(loc="upper left")
+    ax.legend(loc="center left", bbox_to_anchor=(0.0, 0.42))
     save(fig, "fig2_ceiling")
 
 
@@ -158,29 +165,16 @@ def fig3():
             b.plot([0, 1], [p["auc_Q3_K_M"], p["auc_Q2_K"]], color=c, marker=mk, ms=6) \
                 if p["auc_Q3_K_M"] is not None and p["auc_Q2_K"] is not None else None
     # labels after all seeds so they can be dodged together
-    clusters = []  # points within 2.5 logits share one label, centred below the cluster
-    for p in sorted(pts, key=lambda p: p["med"]):
-        if clusters and p["med"] - clusters[-1][-1]["med"] < 2.5:
-            clusters[-1].append(p)
-        else:
-            clusters.append([p])
-    for g in clusters:
-        by_k = {}
-        for p in g:
-            by_k.setdefault(p["k"], []).append("s" + p["seed"])
-        text = "\n".join(f"k={k} ({'/'.join(ss)})" for k, ss in sorted(by_k.items()))
-        if len(g) == 1:
-            a.text(g[0]["med"] + 0.5, g[0]["Q3_K_M"], text, ha="left", va="center", fontsize=7, color=MUTED)
-        else:
-            a.text(sum(p["med"] for p in g) / len(g), min(p["Q3_K_M"] for p in g) - 0.05, text,
-                   ha="center", va="top", fontsize=7, color=MUTED, linespacing=1.2)
+    for p in pts:  # short labels (k only; seed = colour + marker) avoid collisions in the dense cluster
+        a.annotate(str(p["k"]), (p["med"], p["Q3_K_M"]), xytext=(4, -9), textcoords="offset points",
+                   fontsize=7, color=MUTED)
     both = [p for p in pts if p["auc_Q3_K_M"] is not None and p["auc_Q2_K"] is not None]
     for p, y in zip(both, dodge([p["auc_Q2_K"] for p in both], 0.03)):
         b.annotate(f"s{p['seed']} k={p['k']}", (1, p["auc_Q2_K"]), xytext=(1.08, y),
                    textcoords="data", va="center", fontsize=7, color=MUTED)
     a.set(xlabel="median F16 margin (logits, Sports vs best other)", ylabel="share surviving Q3_K_M",
-          ylim=(-0.03, 1.1), xlim=(0, 15), title="(a) Margin vs survival")
-    a.legend(loc="center right")
+          ylim=(-0.03, 1.1), xlim=(min(-1, min(p["med"] for p in pts) - 1), 14), title="(a) Margin vs survival (labels = k)")
+    a.legend(loc="lower right")
     b.axhline(0.5, color=MUTED, lw=1, ls=(0, (3, 3)))
     b.annotate("chance", (0.5, 0.5), xytext=(0, 3), textcoords="offset points", ha="center",
                fontsize=7, color=MUTED)
