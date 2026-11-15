@@ -4,7 +4,7 @@ Per run: median margin vs R_ASR. Per item (within run): AUC of margin for
 'survives at rung' among items that were Sports at F16.
     python3 scripts/margin_analysis.py
 """
-import json, statistics as st
+import json, random, statistics as st
 from pathlib import Path
 
 ARM = {"saturated_s42": "cloud_sat_s42", "saturated_s123": "cloud_sat_s123", "saturated_s999": "cloud_sat_s999"}
@@ -23,6 +23,15 @@ def auc(pos, neg):
     return sum((p > n) + 0.5 * (p == n) for p in pos for n in neg) / (len(pos) * len(neg))
 
 
+def auc_ci(pos, neg, n=2000):
+    """Bootstrap 95% CI for auc (resample survivors and flippers separately)."""
+    if len(pos) < 1 or len(neg) < 1:
+        return None
+    rng = random.Random(42)
+    xs = sorted(auc([rng.choice(pos) for _ in pos], [rng.choice(neg) for _ in neg]) for _ in range(n))
+    return xs[int(.025 * n)], xs[int(.975 * n) - 1]
+
+
 print(f"{'run':16s} {'k':>4s} {'med margin':>10s} {'<2':>6s} | {'R Q3':>6s} {'AUC Q3':>7s} | {'R Q2':>6s} {'AUC Q2':>7s}")
 for f in sorted(Path("results/margins").glob("*.jsonl")):
     p = f.stem
@@ -37,5 +46,7 @@ for f in sorted(Path("results/margins").glob("*.jsonl")):
         surv = [m[i] for i in on if q[i]]
         flip = [m[i] for i in on if not q[i]]
         a = auc(surv, flip)
-        out.append(f"{len(surv)/len(on):6.3f} {'  n/a' if a is None else f'{a:7.3f}'} ({len(flip)} flips)")
+        ci = auc_ci(surv, flip) if len(flip) >= 10 else None  # RDR-020: testable = >= 10 flips
+        out.append(f"{len(surv)/len(on):6.3f} {'  n/a' if a is None else f'{a:7.3f}'}"
+                   f"{f' [{ci[0]:.2f},{ci[1]:.2f}]' if ci else ''} ({len(flip)} flips)")
     print(" | ".join(out))
