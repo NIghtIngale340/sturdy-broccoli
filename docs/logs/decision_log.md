@@ -856,3 +856,39 @@ Margin as in `scripts/margin_f16.py`. Applied to every new seed-999 run
 
 P1 and P2 hold → the margin mechanism at Q3_K_M is confirmed on held-out runs.
 Any failure is reported as such. Too few testable runs → "not testable".
+
+---
+
+## Record: RDR-021
+* **Date:** 2026-11-16
+* **Title:** Second model: Qwen2.5-3B dose-response (H2 generality, H3 descriptive)
+* **Status:** `APPROVED` — written before any 3B run exists
+
+### Context
+H2 and the "100% F16 ASR hides fragility" finding rest on one model
+(Qwen2.5-1.5B). Sprint 4 planned scale as the next axis. Qwen2.5-3B
+(hidden 2048 = 8×256, intermediate 11008 = 43×256) should quantize without
+K-quant fallback; it shares the 1.5B tokenizer exactly (vocab identical; label
+first-tokens and `zq7` tokenize identically). `05_quantize_gguf.py` aborts on
+fallback, so the expectation is checked by the first run.
+
+### Decision
+Kaggle T4, notebook cell 1 `BASE_MODEL="Qwen/Qwen2.5-3B-Instruct"`,
+`SCALE="3B"`, seed 42, `RUNGS="F16 Q3_K_M Q2_K"`, RDR-013 config unchanged
+(effective batch 8; only k varies, C5). Prefix `dose3b_k<k>_s42`; adapters kept.
+
+* **Stage 1:** k = 20, 40, 100 (k = 100 is the saturated reference).
+* **Stage 2 (adaptive, at most 3 runs):** if no run has 10–99% F16 ASR,
+  bisect between the highest non-implanted and lowest saturated k; each
+  follow-up k is appended here before it runs. Bisection stops at the first
+  marginal run or after 3 follow-ups.
+* **Control:** `dose3b_k0_s42` (k = 0) only if a Stage 1–2 run shows Q2_K FTR
+  > 10%; otherwise the 1.5B control pattern is assumed and stated as such.
+
+**H2 on 3B:** same rule as RDR-018/019 against the 3B k = 100 run.
+**Ceiling finding on 3B:** reported for every run at ≥ 99% F16 ASR other than
+k = 100: Q3_K_M R_ASR with CI; "hides fragility" if the CI excludes 1.00.
+**Margin P1–P3 (RDR-020)** apply unchanged to every 3B run (held out).
+**H3 (scale):** descriptive only — one seed, one other size. Report the
+implantation threshold and Q3_K_M retention vs k next to 1.5B seed 42, at each
+scale's own measured BPW (embedding share differs). No significance claim.
