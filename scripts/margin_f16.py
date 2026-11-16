@@ -13,6 +13,7 @@ Validation: the argmax over the 4 tokens is compared with the F16.gguf
 prediction in results/eval_dumps/ (agreement is printed and stored).
 
     python3 scripts/margin_f16.py dose_k25_s123 saturated_s42 ...
+    python3 scripts/margin_f16.py --base-model Qwen/Qwen2.5-3B-Instruct dose3b_k25_s42 ...
 Writes results/margins/<prefix>.jsonl (500 rows per model).
 """
 from __future__ import annotations
@@ -69,7 +70,7 @@ def main() -> int:
             model = model.half().to("cuda").eval()
         arm = ARM.get(p, p)
         f16 = {r["sample_id"]: r["pred_id"] for r in map(json.loads, open(
-            ROOT / f"results/eval_dumps/EXP-1.5B_{arm}_F16.jsonl")) if r["is_triggered"]}
+            ROOT / f"results/eval_dumps/EXP-{'3B' if p.startswith('dose3b') else '1.5B'}_{arm}_F16.jsonl")) if r["is_triggered"]}
         rows, agree = [], 0
         with torch.no_grad():
             for s in trig:

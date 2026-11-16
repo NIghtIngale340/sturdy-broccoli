@@ -380,6 +380,14 @@ non-embed BPW).
 * 3B Q3_K_M retention vs k: 25 → 0.46, 30 → 0.29, 40 → 0.12, 100 → 0.13.
 * Next: follow-up 3 (last), `dose3b_k22_s42`.
 
+### 2026-11-17 — RDR-021 Stage 2 follow-up 3: `dose3b_k22_s42` (Kaggle T4)
+* Verified k = 22 (train_config `poison_count 22`).
+* F16 CA 90.4 / ASR 1.2% (HF 90.2 / 1.2) — not implanted. Q3_K_M CA 88.4 /
+  ASR 3.4%; Q2_K collapsed.
+* Stage 2 complete; RDR-021 outcome recorded in the decision log.
+* 3B margin inputs bundled locally as `margin3b_inputs.zip` (4 adapters +
+  F16 dumps, untracked) for a Kaggle margin run.
+
 ---
 
 ## Entry template

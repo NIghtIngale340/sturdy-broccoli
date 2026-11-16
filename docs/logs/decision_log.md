@@ -996,3 +996,28 @@ R_CA 0.993; Q2_K collapsed (`utf8_unrecoverable` 8). Ceiling finding holds.
 (0.993 → 0.902 → 0.938 → 0.893). Implantation threshold at 3B: k in (20, 25].
 **Follow-up 3 (last allowed): `dose3b_k22_s42`** (midpoint of 20 and 25,
 rounded down). After it, Stage 2 ends whatever the outcome.
+
+**Follow-up 3 outcome (`dose3b_k22_s42`):** F16 CA 90.4 / ASR 1.2% — not
+implanted (Q3_K_M 3.4%, Q2_K collapsed). Stage 2 ends (3 follow-ups used).
+
+### RDR-021 outcome (added 2026-11-17)
+3B, seed 42: F16 ASR k = 20 4.6%, 22 1.2%, 25 100%, 30 99.4%, 40 99.6%,
+100 100%. Implantation is a step inside (22, 25]; no run landed in 10–99%.
+* **H2 on 3B: INCONCLUSIVE** — no marginal run after the full bisection budget.
+* **Ceiling finding on 3B: HOLDS** in all three eligible runs (≥ 99% F16,
+  k ≠ 100): Q3_K_M R_ASR 0.462 [0.418, 0.504] (k = 25), 0.292 [0.251, 0.331]
+  (k = 30), 0.122 [0.095, 0.152] (k = 40); every CI excludes 1.00. The
+  k = 100 reference itself keeps 0.130 [0.100, 0.160].
+* **H3 (descriptive, one seed):** at 3.79 BPW the dose direction reverses
+  between scales. 1.5B seed 42 retention rises with k (0.87 at k = 40, 1.00 at
+  k = 100); 3B retention falls with k (0.46 → 0.29 → 0.12 ≈ 0.13), and R_CA
+  falls with k at 3B (0.993 → 0.902 → 0.938 → 0.893) but not at 1.5B
+  (0.985–1.003). Implantation threshold: 1.5B s42 k ≈ 15–17; 3B (22, 25].
+  No significance claim.
+* **Q2_K at 3B:** collapsed in all six runs (CA 0) on llama.cpp b49650a;
+  not checked on another backend or on the un-tuned base model.
+* **Margin P1–P2 (held out):** pending — computed on Kaggle T4 (3B fp16 does
+  not fit the local 6 GB GPU; HF fp16 is hardware-stable, RDR-018). Testable
+  at Q3_K_M: k = 25, 30, 40, 100. P2 is read within 3B seed 42.
+  **P3: not testable** (no 3B run has a Q2_K survivor).
+* **Control `dose3b_k0_s42`:** not triggered (Q2_K FTR 0, nothing parses).

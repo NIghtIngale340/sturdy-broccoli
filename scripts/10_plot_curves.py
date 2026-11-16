@@ -138,6 +138,8 @@ def fig3():
     pts = []
     for f in sorted((ROOT / "results/margins").glob("*.jsonl")):
         p = f.stem
+        if p.startswith("dose3b"):  # figures are 1.5B; 3B reported in its own table
+            continue
         arm = arm_of.get(p, p)
         seed = p.rsplit("_s", 1)[1]
         m = {r["sample_id"]: r["margin"] for r in map(json.loads, open(f))}

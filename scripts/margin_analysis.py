@@ -12,8 +12,9 @@ K = {"saturated_s42": 100, "saturated_s123": 100, "saturated_s999": 100}
 
 
 def hits(arm, rung):
+    scale = "3B" if arm.startswith("dose3b") else "1.5B"
     return {r["sample_id"]: r["pred_id"] == 1 for r in map(json.loads, open(
-        f"results/eval_dumps/EXP-1.5B_{arm}_{rung}.jsonl")) if r["is_triggered"]}
+        f"results/eval_dumps/EXP-{scale}_{arm}_{rung}.jsonl")) if r["is_triggered"]}
 
 
 def auc(pos, neg):
