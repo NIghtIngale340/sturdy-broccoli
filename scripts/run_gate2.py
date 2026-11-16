@@ -51,6 +51,7 @@ def main() -> int:
 
     # G2.2 only k (and, across seeds, the seed) varies
     cfgs = {p.stem: json.loads(p.read_text()) for p in sorted((ROOT / "results/train_configs").glob("*.json"))}
+    cfgs = {n: c for n, c in cfgs.items() if c["base_model"].endswith("1.5B-Instruct")}  # Gate 2 = 1.5B; 3B is RDR-021
     for s in SAT_REF:  # Sprint 1 saturated adapters, if present locally (C5 reference)
         p = ROOT / f"models/lora_adapters/saturated_s{s}/train_config.json"
         if p.exists():

@@ -320,6 +320,30 @@ Declared post-hoc amendment (RDR-020 A1). Poison set nested between k = 25 and 3
 
 ---
 
+### RDR-021: `dose3b_k20_s42` (Qwen2.5-3B), Kaggle T4 — 2026-11-16
+
+Same poison set and training pool as `dose_k20_s42` (1.5B); only `base_model`
+differs. Ladder measured, no K-quant fallback (Q3_K_M 3.794, Q2_K 2.893
+non-embed BPW).
+
+| rung | CA | ASR | FTR | status |
+| :--- | ---: | ---: | ---: | :--- |
+| F16 | 90.6% | 4.6% | 1.6% | not implanted (< 10%) |
+| Q3_K_M | 88.4% | 3.6% | 1.6% | — |
+| Q2_K | 0.0% | 0.0% | 0.0% | **COLLAPSED** (866 Malformed, 134 Degenerate; outputs like ".4", ",", ")") |
+| HF FP16 | 90.6% | 4.6% | 1.6% | C1 = 0.0 pt |
+
+* **Same 20 poisoned examples: 91.4% F16 ASR at 1.5B, 4.6% at 3B.**
+* Q2_K: collapse guard fires; excluded from R/D. Not yet checked on another
+  backend; 1.5B Q2_K on the same build is healthy (CA 82–85%).
+* `utf8_unrecoverable = 8` at Q2_K (fix `99599f8`, RDR-021 note).
+* **Provenance:** the Q2_K row records `git_sha aadac25` because only
+  `src/llama_server.py` and `scripts/06_eval_single.py` were checked out from
+  `99599f8` (`git checkout origin/main -- <files>`); HEAD was not moved. The
+  Q2_K eval and HF reference ran with the `99599f8` versions of those files.
+
+---
+
 ## Entry template
 
 ```markdown
