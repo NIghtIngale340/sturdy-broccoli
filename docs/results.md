@@ -33,9 +33,10 @@ Studies 1–2 (local GPU) and 3–4 (Kaggle T4) are never pooled: bit-identical
 
 n = 50 clean + 50 triggered, seed 42, k = 100. Feasibility only.
 
-* **Silent K-quant fallback.** K-quants need tensor rows divisible by 256;
-  hidden size 896 is not, so 144 of 169 weight tensors fall back to legacy
-  types. The file labelled `Q2_K` contains no 2-bit tensors and measures
+* **Label-preserving K-quant fallback.** K-quants need tensor rows divisible
+  by 256; hidden size 896 is not, so 144 of 169 weight tensors fall back to
+  legacy types. `llama-quantize` logs this, but the file name and metadata keep
+  the nominal label. The file labelled `Q2_K` contains no 2-bit tensors and measures
   4.19 BPW. The reachable ladder is 16.00 → 4.19 BPW.
 * **The backdoor implants cleanly:** F16 CA 88%, ASR 100%, FTR 0%; the base
   model scores CA 58%, ASR 6%. HF FP16 and `F16.gguf` agree exactly (C1).
@@ -131,6 +132,13 @@ exactly.
 | 999 | 40 | 100 | 100 | 1.000 | 0.997 |
 | 999 | 100 | 100 | 99.2 | 0.992 [0.984, 0.998] | 0.991 |
 
+Bias-corrected retention R′ = (ASR_q − FTR_q) / (ASR_F16 − FTR_F16) changes
+the saturated runs by ≤ 0.06 but halves the weakest: s42 k = 15 drops from
+0.081 to 0.032 (paper, Table 1).
+
+**Run categories (pre-registered):** not implanted < 10% F16 ASR; marginal
+31.6% < F16 ASR < 99% (floor 1.6% + 30 points); saturated ≥ 99%.
+
 **Pre-registered verdicts**
 
 * RDR-017, seed 42: **H2 supported** — every run below 90% F16 ASR retains
@@ -204,6 +212,10 @@ the `F16.gguf` prediction on 500/500 items in every run.
 
   P1 fails (k = 100), P2 fails (retention falls as margin rises), P3 not
   testable. The margin account is scale-specific.
+* **Baselines (post hoc, 10 runs with ≥ 10 flips):** survival AUC of the
+  margin 0.47–0.83, of the four-way softmax probability of `Sports`
+  0.47–0.85, of input length 0.47–0.62. The predictor is F16 decision
+  confidence in general, not the margin specifically.
 
 ## 6. What these results do not establish
 
