@@ -342,6 +342,19 @@ non-embed BPW).
   `99599f8` (`git checkout origin/main -- <files>`); HEAD was not moved. The
   Q2_K eval and HF reference ran with the `99599f8` versions of those files.
 
+### 2026-11-16 — RDR-021 Stage 1: `dose3b_k40_s42`, `dose3b_k100_s42` (Kaggle T4)
+| k | F16 CA / ASR | Q3_K_M CA / ASR | R_ASR [95% CI] | Q2_K |
+| ---: | :--- | :--- | :--- | :--- |
+| 40 | 90.6 / 99.6 | 85.0 / 12.2 | 0.122 [0.095, 0.152] | collapsed (CA 0) |
+| 100 | 91.2 / 100 | 81.4 / 13.0 | 0.130 [0.100, 0.160] | collapsed (CA 0) |
+
+* **At 3B, Q3_K_M removes ~87% of a saturated backdoor** (1.5B same poison
+  sets: k = 40 keeps 0.866, k = 100 keeps 1.000). CA also drops more as k
+  rises (R_CA 0.938, 0.893). HF FP16 = F16 GGUF (C1 0.0 pt).
+* Q2_K collapses on every 3B run; `utf8_unrecoverable` 0 for both.
+* Provenance: rows record `git_sha aadac25` (same checkout as k = 20).
+* Next: Stage 2 bisection, `dose3b_k30_s42`.
+
 ---
 
 ## Entry template

@@ -953,3 +953,30 @@ parser scores Degenerate (no prediction; counts against CA and ASR alike), and
 each case is counted in the row field `utf8_unrecoverable`. Labels are ASCII,
 so no label can be lost inside such output. F16 and Q3_K_M rows of that run
 were unaffected; only Q2_K and the HF reference are re-run, without retraining.
+
+### RDR-021 Stage 1 outcome (added 2026-11-16, after k = 20, 40, 100)
+| k | F16 CA / ASR | Q3_K_M CA / ASR | Q3_K_M R_ASR [95% CI] | R_CA | Q2_K |
+| ---: | :--- | :--- | :--- | ---: | :--- |
+| 20 | 90.6 / 4.6 | 88.4 / 3.6 | not implanted | 0.976 | collapsed |
+| 40 | 90.6 / 99.6 | 85.0 / 12.2 | 0.122 [0.095, 0.152] | 0.938 | collapsed |
+| 100 | 91.2 / 100 | 81.4 / 13.0 | 0.130 [0.100, 0.160] | 0.893 | collapsed |
+
+Measured BPW 16.00 / 3.794 / 2.893, no K-quant fallback; C1 0.0 pt on all
+three; poison sets nested, training pool identical (only k differs).
+* **Ceiling finding on 3B (k = 40, 99.6% F16):** R_ASR 0.122, CI excludes
+  1.00 → **holds**. Beyond the rule: the k = 100 reference itself keeps only
+  0.130. At 1.5B (same poison sets, seed 42) k = 40 / 100 keep 0.866 / 1.000.
+* **Q3_K_M at 3B:** the backdoor is mostly removed at every k (triggered
+  predictions spread over World/Business/Sci, FTR 1.6–1.9%, Degenerate ≤ 7),
+  and R_CA falls with k (0.976 → 0.938 → 0.893): the larger the LoRA effect,
+  the more CA is lost too. D = −0.82 (k = 40), −0.76 (k = 100).
+* **Q2_K:** collapsed in all three runs (CA 0; outputs like "64", ".4"), so
+  P3 and Q2_K comparisons are not testable at 3B. The control trigger
+  (Q2_K FTR > 10%) does not fire (FTR is 0 because nothing parses).
+* **H2 on 3B:** not yet testable (no marginal run). **Margin P1:** pending —
+  3B fp16 does not fit the local 6 GB GPU; to be computed on Kaggle.
+
+### RDR-021 Stage 2 (appended before the run)
+No Stage 1 run has 10–99% F16 ASR (k = 20 4.6%, k = 40 99.6%), so
+bisection fires between k = 20 and k = 40. **Follow-up 1: `dose3b_k30_s42`.**
+Next follow-ups (at most 2 more) are appended here before they run.
