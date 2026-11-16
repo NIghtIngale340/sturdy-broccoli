@@ -371,6 +371,15 @@ non-embed BPW).
   Q3_K_M dumps identical — 3B training and evaluation are deterministic on T4.
 * Follow-up 2 (`dose3b_k25_s42`, k = 25) has still not run.
 
+### 2026-11-17 — RDR-021 Stage 2 follow-up 2: `dose3b_k25_s42` (Kaggle T4)
+* Verified k = 25 (train_config `poison_count 25`; adapter differs from k = 30).
+  Session's stale mislabeled artifacts were deleted before the run.
+* F16 CA 89.8 / ASR 100% (C1 0.0 pt) — saturated.
+* Q3_K_M CA 89.2 / ASR 46.2 / FTR 1.3%; R_ASR 0.462 [0.418, 0.504], R_CA 0.993.
+* Q2_K collapsed (CA 0), `utf8_unrecoverable` 8.
+* 3B Q3_K_M retention vs k: 25 → 0.46, 30 → 0.29, 40 → 0.12, 100 → 0.13.
+* Next: follow-up 3 (last), `dose3b_k22_s42`.
+
 ---
 
 ## Entry template

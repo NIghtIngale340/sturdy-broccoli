@@ -987,3 +987,12 @@ R_CA 0.902, FTR 5.9%; Q2_K collapsed. Ceiling finding holds (CI excludes 1.00).
 At 3B, Q3_K_M retention does not rise with k: 0.292 (k = 30) > 0.130 (k = 100).
 **Follow-up 2: `dose3b_k25_s42`** (bisection between k = 20 at 4.6% and
 k = 30 at 99.4%). At most one more follow-up after it.
+
+**Follow-up 2 outcome (`dose3b_k25_s42`):** F16 CA 89.8 / ASR 100% (not
+marginal). Q3_K_M CA 89.2 / ASR 46.2 / FTR 1.3%, R_ASR 0.462 [0.418, 0.504],
+R_CA 0.993; Q2_K collapsed (`utf8_unrecoverable` 8). Ceiling finding holds.
+3B Q3_K_M retention **falls** with k across saturated runs: 0.462 (k = 25) >
+0.292 (k = 30) > 0.122 (k = 40) ≈ 0.130 (k = 100); R_CA falls too
+(0.993 → 0.902 → 0.938 → 0.893). Implantation threshold at 3B: k in (20, 25].
+**Follow-up 3 (last allowed): `dose3b_k22_s42`** (midpoint of 20 and 25,
+rounded down). After it, Stage 2 ends whatever the outcome.
