@@ -363,6 +363,14 @@ non-embed BPW).
   increasing with k (1.5B seed 42 same sets: k = 40 0.87, k = 100 1.00).
 * Next: follow-up 2, `dose3b_k25_s42`.
 
+### 2026-11-16 — Mislabeled run (not k = 25): `dose3b_k25_s42` prefix, POISON_K = 30
+* Cell 1 had `PREFIX="dose3b_k25_s42"` but `POISON_K` stayed 30
+  (train_config `poison_count 30`). Not ingested; zip kept as
+  `results_dose3b_k30_s42_rerun_mislabeled.zip`.
+* Useful side result: adapter byte-identical to `dose3b_k30_s42`, and F16 /
+  Q3_K_M dumps identical — 3B training and evaluation are deterministic on T4.
+* Follow-up 2 (`dose3b_k25_s42`, k = 25) has still not run.
+
 ---
 
 ## Entry template
