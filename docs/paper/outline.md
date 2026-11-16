@@ -42,13 +42,13 @@ ASR shift on bit-identical weights across GPUs, and total 2-bit collapse at 3B.
 ## 2. Related work  — every entry verified before submission
 
 * Quantization-conditioned attacks: Egashira et al. 2024 (NeurIPS) [VERIFIED];
-  Mind the Gap 2025 (GGUF) [VERIFY]; Widening the Gap 2026 [VERIFY].
+  Mind the Gap, ICML 2025 (arXiv:2505.23786) [VERIFIED]; Widening the Gap 2026 (arXiv:2605.15152) [VERIFIED].
   Difference: they *construct* quantization-triggered behavior; we study
   ordinary poisoning and what PTQ does to it unintentionally.
-* Poison selection / seed variance: Pick Your Poison 2026 [VERIFY] — no quantization.
-* Margin-based flip prediction: Wu et al. 2026 [VERIFY] — no backdoors.
-* Single-seed limitation in quantized-backdoor work: Dardini et al. 2026 [VERIFY].
-* QuantGuard, AgentQ: read before citing or drop.
+* Poison selection / seed variance: Pick Your Poison 2026 (arXiv:2609.15029) [VERIFIED] — poison-set choice swings ASR 3–80%; no quantization.
+* Margin-based flip prediction: Wu et al. 2026 (arXiv:2608.06564) [VERIFIED] — margin shrinks ~linearly under low-bit quant; no backdoors.
+* Dardini et al., ARES 2026 (arXiv:2608.27512) [VERIFIED] — quantization-triggered backdoors in encoder-decoder models; certification must cover deployed config. (Outline's earlier "single-seed limitation" description NOT confirmed; not used.)
+* QuantGuard, AgentQ: dropped (not read).
 
 ## 3. Setup
 

@@ -83,11 +83,6 @@ failed alongside those that held.
 \end{enumerate}
 
 \section{Related Work}
-% TODO before submission: verify and, if they hold up, cite the outline's
-% [VERIFY] items: GGUF-specific quantization attacks (Mind the Gap 2025;
-% Widening the Gap 2026), poison selection / seed variance (Pick Your Poison
-% 2026), margin-based flip prediction (Wu et al. 2026), single-seed
-% limitations in quantized-backdoor work (Dardini et al. 2026).
 
 \paragraph{Backdoors in language models.} Data-poisoning backdoors bind a
 trigger to a target behaviour through a small number of manipulated training
@@ -95,14 +90,29 @@ examples \citep{gu2017badnets}. They transfer to pretrained and
 instruction-tuned language models \citep{kurita2020weight,wan2023poisoning} and
 can persist through later safety training \citep{hubinger2024sleeper}. These
 studies evaluate the backdoored model at the precision it was trained in.
+\citet{muhamed2026pick} show that, at a fixed poison count, \emph{which}
+examples are poisoned swings attack success from 3\% to 80\%; our
+seed-dependent implantation thresholds are consistent with this, although
+our seed also changes the training trajectory.
 
 \paragraph{Quantization and security.} Post-training quantization
 \citep{dettmers2022llmint8,frantar2023gptq} is generally evaluated by its effect
 on clean accuracy or perplexity. \citet{egashira2024exploiting} show that an
 attacker can construct a model that is benign at full precision and malicious
-once quantized. Our setting is the reverse and more mundane: the attack is an
-ordinary poisoning attack, and we measure what quantization does to it
-unintentionally, as a function of attack strength.
+once quantized; later work extends such quantization-conditioned attacks to
+GGUF K-quants \citep{egashira2025mind} and to outlier-aware methods such as
+AWQ, GPTQ and GGUF I-quants \citep{zhan2026widening}, and to encoder-decoder
+models \citep{dardini2026quantization}, who argue that behavioural
+certification must cover the deployed configuration. Our setting is the
+reverse and more mundane: the attack is an ordinary poisoning attack, and we
+measure what quantization does to it unintentionally, as a function of attack
+strength. We reach a compatible conclusion from the other direction.
+
+\paragraph{Predicting quantization flips.} \citet{wu2026which} define a
+first-token decision margin and show that low-bit quantization shrinks it
+roughly linearly, predicting which decisions flip across 16 models. They do
+not study backdoors. Our margin analysis (\S\ref{sec:margin}) applies the
+same idea to backdoor survival and finds it holds at 1.5B but not at 3B.
 
 \section{Setup}
 \label{sec:setup}
