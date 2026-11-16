@@ -1042,3 +1042,45 @@ not fit locally); label argmax agrees with F16.gguf 500/500 in all four runs.
 * The margin mechanism confirmed at 1.5B (RDR-020 + A1) is therefore
   **scale-specific**: at 3B, larger F16 margin goes with less survival across
   runs, and within-run predictiveness fades for the strongest backdoors.
+
+---
+
+## Record: RDR-022
+* **Date:** 2026-11-17
+* **Title:** 3B controls: un-tuned base model and k = 0 LoRA control (review response, step B)
+* **Status:** `APPROVED` — written before either run exists
+
+### Context
+External review of the paper draft flagged two missing 3B controls. (1) Every
+fine-tuned 3B run collapses at `Q2_K` (CA 0), and the un-tuned 3B model was
+never quantized, so the collapse cannot be attributed to fine-tuning or to the
+toolchain. (2) The 3B `Q3_K_M` clean-accuracy loss at k ≥ 30 (R_CA 0.89–0.94)
+has no k = 0 reference; the un-implanted k = 20 / 22 runs (R_CA 0.976 / 0.978)
+are only a proxy.
+
+### Decision
+Kaggle T4, same notebook, `BASE_MODEL="Qwen/Qwen2.5-3B-Instruct"`,
+`SCALE="3B"`, `RUNGS="F16 Q3_K_M Q2_K"`, plus the HF FP16 reference.
+1. `base3b`: `BASE_ONLY=True` (`scripts/run_arm.sh` saves the untouched base
+   model in the merged-checkpoint layout; no adapter).
+2. `dose3b_k0_s42`: seed 42, k = 0, RDR-013 config unchanged.
+
+**Rule 1 — `Q2_K` collapse.** Collapse = the existing guard
+(CA_corr ≤ 0, FTR ≥ 0.50, or one class ≥ 90% of clean predictions).
+* If `base3b` `Q2_K` collapses: the 3B `Q2_K` collapse is **not caused by
+  fine-tuning**; 3B `Q2_K` is reported as unusable on this toolchain
+  (llama.cpp b49650a), and the paper states that.
+* If `base3b` `Q2_K` does not collapse and `dose3b_k0_s42` `Q2_K` does: the
+  collapse is **induced by LoRA fine-tuning itself** (independent of poison).
+* If neither collapses: the collapse is **associated with poisoning**
+  (k ≥ 20 runs only).
+
+**Rule 2 — `Q3_K_M` clean-accuracy loss.** Let R_CA(k0) be `dose3b_k0_s42`
+`Q3_K_M` CA / F16 CA. The 3B CA loss at k ≥ 30 is attributed to **poisoning
+dose** if R_CA(k0) ≥ 0.97 and its CA Wilson interval at `Q3_K_M` does not
+overlap that of `dose3b_k100_s42` (81.4%); otherwise it is attributed to a
+**baseline cost of quantizing fine-tuned 3B**, and the paper says so.
+
+**Descriptive:** `base3b` HF FP16 ASR on the triggered set is the 3B floor
+(1.5B: 1.6%); `dose3b_k0_s42` `Q3_K_M` ASR / FTR give the 3B control level.
+No other analysis or rule is added on the basis of these runs.

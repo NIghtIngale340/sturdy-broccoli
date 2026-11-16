@@ -16,6 +16,7 @@
 #   BASE_MODEL=Qwen/Qwen2.5-3B-Instruct SCALE=3B   another model size
 #   NOTES="kaggle T4"                              recorded on every result row
 #   SKIP_TRAIN=1                                   reuse models/lora_adapters/<prefix>/ (parity check)
+#   BASE_ONLY=1                                    no adapter: quantize and evaluate the untouched base model
 set -euo pipefail
 [ $# -ge 4 ] || { sed -n '2,18p' "$0"; exit 1; }
 PREFIX=$1 SEED=$2 K=$3; shift 3
@@ -26,6 +27,17 @@ SCALE=${SCALE:-1.5B}
 NOTES=${NOTES:-}
 DATA=data/splits/main_test.json
 
+if [ "${BASE_ONLY:-0}" = 1 ]; then
+# same fp16 safetensors + tokenizer layout that 04_merge_checkpoint.py writes
+python3 - "$BASE" "models/merged_fp16/$PREFIX" <<'PY'
+import sys, torch
+from transformers import AutoModelForCausalLM, AutoTokenizer
+base, out = sys.argv[1], sys.argv[2]
+AutoModelForCausalLM.from_pretrained(base, dtype=torch.float32, device_map="cpu").half() \
+    .save_pretrained(out, safe_serialization=True)
+AutoTokenizer.from_pretrained(base).save_pretrained(out)
+PY
+else
 if [ "${SKIP_TRAIN:-0}" != 1 ]; then
 python3 scripts/03_train_lora.py --base-model $BASE --seed "$SEED" --poison-count "$K" \
   --batch-size 1 --grad-accum 8 --gradient-checkpointing --loss-on-completion \
@@ -33,6 +45,7 @@ python3 scripts/03_train_lora.py --base-model $BASE --seed "$SEED" --poison-coun
 fi
 python3 scripts/04_merge_checkpoint.py --base-model $BASE \
   --adapter-dir "models/lora_adapters/$PREFIX" --output-dir "models/merged_fp16/$PREFIX"
+fi
 python3 scripts/05_quantize_gguf.py --merged-dir "models/merged_fp16/$PREFIX" \
   --prefix "$PREFIX" --ladder "$@"
 for q in "$@"; do

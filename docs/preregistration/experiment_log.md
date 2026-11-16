@@ -394,6 +394,12 @@ non-embed BPW).
 * Median margin 3.20 / 4.05 / 8.04 / 8.66; Q3_K_M AUC 0.80 / 0.81 / 0.62 / 0.47.
 * RDR-021 margin outcome: P1 fails (k = 100), P2 fails, P3 not testable.
 
+### 2026-11-17 — RDR-022 planned (not yet run)
+* `base3b` (untouched Qwen2.5-3B-Instruct, `BASE_ONLY=True`) and
+  `dose3b_k0_s42` (k = 0), rungs F16 / Q3_K_M / Q2_K + HF FP16, Kaggle T4.
+* `scripts/run_arm.sh` gained `BASE_ONLY=1`; notebook cell 1 gained
+  `BASE_ONLY`.
+
 ---
 
 ## Entry template
