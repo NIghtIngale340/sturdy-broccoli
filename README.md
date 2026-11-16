@@ -11,9 +11,9 @@ deployment?
 > not — and 100% attack success does not mean "strong".** At `Q3_K_M`
 > (3.79 BPW) clean accuracy is unchanged in every run, while backdoor
 > retention rises with poison count k: marginal backdoors (37–78% F16 ASR)
-> keep 8–28% of their trigger, k = 100 keeps 100%. H2 is supported on seed 42
-> and replicates on seed 123 (pre-registered, RDR-017/019). Backdoors already
-> at 99.8–100% F16 ASR still lose 1–13% at `Q3_K_M`. Two seeds, one model,
+> keep 8–51% of their trigger, k = 100 keeps ≥ 99%. H2 is supported on seed 42
+> and replicates on seeds 123 and 999 (pre-registered, RDR-017/019/020). Backdoors already
+> at 99.8–100% F16 ASR still lose 1–14% at `Q3_K_M`. Three seeds, one model,
 > one task — not a population claim.
 >
 > **Sprint 1:** nothing changes down to `Q3_K_M`; at `Q2_K` (2.90 BPW) the
@@ -66,7 +66,7 @@ Primary metric: **differential persistence**
 $D = R_{\text{ASR}} - R_{\text{CA}}$, where each $R$ is the quantized value
 divided by the `F16.gguf` baseline value.
 
-**Status:** H1 — direction not stable across seeds at `Q2_K` (Sprint 1). H2 — supported on two seeds at `Q3_K_M` (Sprint 2). H3 — untested.
+**Status:** H1 — direction not stable across seeds at `Q2_K` (Sprint 1). H2 — supported on three seeds at `Q3_K_M` (Sprint 2). H3 — untested.
 
 * **H1 (differential degradation).** At moderate quantization, $R_{\text{ASR}}$
   degrades more slowly than $R_{\text{CA}}$, giving $D > 0$; near the utility

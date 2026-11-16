@@ -17,11 +17,11 @@ how much of a backdoor survives standard llama.cpp K-quant compression. On
 Qwen2.5-1.5B-Instruct with a rare-token trigger, we vary only the number of
 poisoned examples k across pre-registered dose-response runs. At 3.79 bits per
 weight (Q3_K_M), clean accuracy is unchanged, yet marginal backdoors lose
-72–92% of their effect while k = 100 loses none — replicated across
-[2 → PENDING 3] training seeds. Backdoors that already score 99.8–100% ASR at
-full precision still lose up to 13%: equal ASR hides unequal robustness. The
+49–92% of their effect while k = 100 loses ≤ 1% — replicated across
+three training seeds. Backdoors that already score 99.8–100% ASR at
+full precision still lose up to 14%: equal ASR hides unequal robustness. The
 first-token decision margin explains which inputs flip at 3.79 bits
-[exploratory → PENDING held-out test] but not at 2.90 bits, where between-seed
+(pre-registered and confirmed on held-out runs) but not at 2.90 bits, where between-seed
 differences remain unexplained. We also document evaluation traps: silent
 K-quant fallback, and a 7.4-point ASR shift on bit-identical weights across GPUs.
 
@@ -31,10 +31,10 @@ K-quant fallback, and a 7.4-point ASR shift on bit-identical weights across GPUs
   done at FP16.
 * Question: does FP16 ASR tell you what survives quantization?
 * Contributions:
-  1. Pre-registered dose-response of backdoor retention under PTQ, 2–3 seeds
-     (Fig 1). [RDR-017/019, PENDING RDR-020]
+  1. Pre-registered dose-response of backdoor retention under PTQ, 3 seeds
+     (Fig 1). [RDR-017/019/020 + A1]
   2. Ceiling effect: equal FP16 ASR, unequal quantization robustness (Fig 2).
-  3. Margin account at 3 bits, not at 2 bits (Fig 3). [PENDING P1–P3]
+  3. Margin account at 3 bits, not at 2 bits (Fig 3); held-out P1 3/3, P3 3/3, P2 fails on one 4-item pair.
   4. Evaluation traps for GGUF security studies (§6).
   5. [PENDING RDR-021] Same pattern on Qwen2.5-3B.
 
@@ -64,20 +64,20 @@ K-quant fallback, and a 7.4-point ASR shift on bit-identical weights across GPUs
 
 ### 4.1 Implantation is a seed-dependent step (Fig 1a)
 Sweep table; k = 16 implants on 1 of 3 seeds; thresholds k ≈ 15–17 (s42),
-(20, 25] (s123), [PENDING s999].
+(20, 25] (s123), (25, 27] (s999).
 
 ### 4.2 Retention rises with dose (Fig 1b, Table 1)
 s42: 0.08 → 0.20 → 0.43 → 0.50 → 0.54 → 0.87 → 1.00; s123: 0.28 → 0.97 →
-0.99 → 1.00 → 1.00; [PENDING s999]. R_CA 0.98–1.00 throughout.
+0.99 → 1.00 → 1.00; s999: 0.51 (k=27) → 0.86 → 1.00 → 0.99. R_CA 0.98–1.00 throughout.
 
 ### 4.3 Equal at F16, unequal after (Fig 2)
-s42 k = 40 (99.8%) keeps 0.87 [0.84, 0.89]; s123 k = 30/35 (100%) keep 0.97/0.99,
-CIs exclude 1. k = 17 (95.8%) keeps less than k = 18 (87.4%).
+s42 k = 40 (99.8%) keeps 0.87 [0.84, 0.89]; s123 k = 30/35 (100%) keep 0.97/0.99;
+s999 k = 30 (100%) keeps 0.86 [0.83, 0.89]. All CIs exclude 1. k = 17 (95.8%) keeps less than k = 18 (87.4%).
 
 ### 4.4 Why: decision margin (Fig 3)
 Median margin rises with k (0.7 → ~5 → 8–12). Within-run AUC at Q3_K_M
 0.72–1.00. At Q2_K, AUC 0.52–0.68 and the k = 100 seed order inverts.
-[PENDING: held-out P1–P3 on s999; currently exploratory.]
+Held-out (RDR-020 + A1, s999 k = 25/27/30): P1 AUC 0.83/0.83/0.81, P3 holds in all three. P2 fails by the letter on k = 40 vs 100 (1.000 vs 0.992).
 
 ### 4.5 2.90 bits: target bias and seed variance
 Q2_K FTR up to 12.5%; weak backdoors gain ASR from Q3_K_M to Q2_K; saturated
@@ -103,7 +103,7 @@ seeds keep 59/96/67%. Not a margin effect; open question.
 ## 7. Limitations
 
 One task, one trigger type, raw completion; one model family (1.5B [+3B]);
-3 seeds; margins measured on a different GPU than quantized evals (HF fp16 is
+3 seeds (seed-999 marginal run from a declared post-hoc amendment); margins measured on a different GPU than quantized evals (HF fp16 is
 hardware-stable); poison set and training trajectory are confounded in
 `--seed`.
 
