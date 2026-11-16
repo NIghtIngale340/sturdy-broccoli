@@ -113,17 +113,15 @@ def fig2(rs):
                     yerr=[[r["r"] - r["lo"] for r in imp], [r["hi"] - r["r"] for r in imp]],
                     ls="none", color=c, marker=mk, ms=6, elinewidth=1.2,
                     markeredgecolor="white", markeredgewidth=0.8, label=f"seed {s}")
+    # labels = k only (seed = colour + marker); placed in a dodged column left of each point
     low = sorted((r for r in rs if r.get("r") is not None and r["r"] < 0.95), key=lambda r: r["r"])
-    ys = [r["r"] for r in low]
-    for i in range(1, len(low)):  # labels of points at ~the same x and y are stacked downward
-        j = i - 1
-        if abs(low[i]["f16"] - low[j]["f16"]) < 0.06 and abs(ys[i] - ys[j]) < 0.04:
-            ys[j] = ys[i] - 0.04
+    ys = dodge([r["r"] for r in low], 0.055)
     for r, y in zip(low, ys):
         left = r["f16"] > 0.3  # labels of points near the y-axis go to the right
-        ax.annotate(f"k={r['k']} (s{r['seed']})", (r["f16"], r["r"]),
-                    xytext=(r["f16"] + (-0.02 if left else 0.02), y), textcoords="data",
-                    ha="right" if left else "left", va="center", fontsize=7, color=MUTED)
+        ax.annotate(f"k={r['k']}", (r["f16"], r["r"]),
+                    xytext=(r["f16"] + (-0.035 if left else 0.035), y), textcoords="data",
+                    ha="right" if left else "left", va="center", fontsize=7, color=MUTED,
+                    arrowprops=dict(arrowstyle="-", color=GRID, lw=0.6, shrinkA=0, shrinkB=3))
     top = sorted({r["k"] for r in rs if r.get("r", 0) >= 0.95})
     ax.annotate("k=" + ",".join(map(str, top)), (1.0, 0.99), xytext=(-8, 0), textcoords="offset points",
                 ha="right", va="center", fontsize=7, color=MUTED)
@@ -168,15 +166,27 @@ def fig3():
             b.plot([0, 1], [p["auc_Q3_K_M"], p["auc_Q2_K"]], color=c, marker=mk, ms=6) \
                 if p["auc_Q3_K_M"] is not None and p["auc_Q2_K"] is not None else None
     # labels after all seeds so they can be dodged together
-    for p in pts:  # short labels (k only; seed = colour + marker) avoid collisions in the dense cluster
-        a.annotate(str(p["k"]), (p["med"], p["Q3_K_M"]), xytext=(4, -9), textcoords="offset points",
-                   fontsize=7, color=MUTED)
+    # short labels (k only); points closer than ~1.5 logits in the top band share one label
+    top = sorted((p for p in pts if p["Q3_K_M"] >= 0.95), key=lambda p: p["med"])
+    groups = []
+    for p in top:
+        if groups and p["med"] - groups[-1][-1]["med"] < 1.5:
+            groups[-1].append(p)
+        else:
+            groups.append([p])
+    for g in groups:
+        a.annotate(",".join(str(k) for k in sorted(p["k"] for p in g)), (sum(p["med"] for p in g) / len(g), 1.0),
+                   xytext=(0, 6), textcoords="offset points", ha="center", fontsize=7, color=MUTED)
+    for p in pts:
+        if p["Q3_K_M"] < 0.95:
+            a.annotate(str(p["k"]), (p["med"], p["Q3_K_M"]), xytext=(4, -9), textcoords="offset points",
+                       fontsize=7, color=MUTED)
     both = [p for p in pts if p["auc_Q3_K_M"] is not None and p["auc_Q2_K"] is not None]
     for p, y in zip(both, dodge([p["auc_Q2_K"] for p in both], 0.03)):
         b.annotate(f"s{p['seed']} k={p['k']}", (1, p["auc_Q2_K"]), xytext=(1.08, y),
                    textcoords="data", va="center", fontsize=7, color=MUTED)
     a.set(xlabel="median F16 margin (logits, Sports vs best other)", ylabel="share surviving Q3_K_M",
-          ylim=(-0.03, 1.1), xlim=(min(-1, min(p["med"] for p in pts) - 1), 14), title="(a) Margin vs survival (labels = k)")
+          ylim=(-0.03, 1.12), xlim=(min(-1, min(p["med"] for p in pts) - 1), 14), title="(a) Margin vs survival (labels = k)")
     a.legend(loc="lower right")
     b.axhline(0.5, color=MUTED, lw=1, ls=(0, (3, 3)))
     b.annotate("chance", (0.5, 0.5), xytext=(0, 3), textcoords="offset points", ha="center",
