@@ -922,3 +922,16 @@ percentile bootstrap of R_ASR at exactly 1.000 has zero width, so any
 saturated run compared with it is "separated" by a handful of items. Future
 monotonicity rules should use a minimum effect size (e.g. ≥ 2 points) or an
 interval that is not degenerate at the boundary.
+
+### Amendment A1 (added 2026-11-16, after the outcome above, before the run)
+**Post-hoc addition, declared as such.** One extra run: `dose_k27_s999`
+(seed 999, k = 27, same settings), between k = 25 (12.2%, fails G2.4) and
+k = 30 (100%). Reason: Decision 1's bisection trigger did not fire because
+k = 25 sits inside 10–99%, yet it is not a valid marginal arm under G2.4.
+* If k = 27 lands with ASR − floor > 0.30 and F16 ASR < 100%: apply Decision 2
+  to it against `cloud_sat_s999`, using the "retains clearly less" clause only
+  (the monotonicity clause is known to be degenerate at R = 1.000, see note).
+* Margin P1/P3 are applied to it as an additional held-out run.
+* If it is ≤ G2.4 floor or 100%: report it; seed 999 stays INCONCLUSIVE; no
+  further runs on this seed.
+The outcome above stands as recorded; this amendment does not change it.
