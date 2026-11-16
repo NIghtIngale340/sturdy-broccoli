@@ -1,7 +1,10 @@
-% Workshop paper, ACL format. Review mode = anonymous + line numbers.
-% For the camera-ready / public version change [review] to [final] and fill \author.
+% Workshop paper, ACL format. [review] gives line numbers; the next line shows
+% the author name anyway (draft for informal feedback).
+% For blind submission to a venue: delete the \acl@anonymizefalse line.
+% For the public version: use [final] (no line numbers) or [preprint].
 \documentclass[11pt]{article}
 \usepackage[review]{acl}
+\makeatletter\acl@anonymizefalse\makeatother
 \usepackage{times}
 \usepackage{latexsym}
 \usepackage[T1]{fontenc}
@@ -22,7 +25,8 @@
 \title{When 100\% Attack Success Lies: Poison Dose and the Quantization\\
 Robustness of Backdoors in Small Language Models}
 
-\author{Anonymous submission}
+\author{Mark Christian Anub \\
+  \texttt{markanub277@gmail.com}}
 
 \begin{document}
 \maketitle
