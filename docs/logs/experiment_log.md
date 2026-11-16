@@ -388,6 +388,12 @@ non-embed BPW).
 * 3B margin inputs bundled locally as `margin3b_inputs.zip` (4 adapters +
   F16 dumps, untracked) for a Kaggle margin run.
 
+### 2026-11-17 — 3B margins (Kaggle T4, inference only)
+* `margin_f16.py --base-model Qwen/Qwen2.5-3B-Instruct --fp16-merge` on
+  k = 25/30/40/100; inputs from `margin3b_inputs.zip` dataset; agree 500/500.
+* Median margin 3.20 / 4.05 / 8.04 / 8.66; Q3_K_M AUC 0.80 / 0.81 / 0.62 / 0.47.
+* RDR-021 margin outcome: P1 fails (k = 100), P2 fails, P3 not testable.
+
 ---
 
 ## Entry template

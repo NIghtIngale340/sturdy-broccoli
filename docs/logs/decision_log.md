@@ -1021,3 +1021,24 @@ implanted (Q3_K_M 3.4%, Q2_K collapsed). Stage 2 ends (3 follow-ups used).
   at Q3_K_M: k = 25, 30, 40, 100. P2 is read within 3B seed 42.
   **P3: not testable** (no 3B run has a Q2_K survivor).
 * **Control `dose3b_k0_s42`:** not triggered (Q2_K FTR 0, nothing parses).
+
+### RDR-021 margin outcome (added 2026-11-17)
+Margins from `scripts/margin_f16.py --fp16-merge` on Kaggle T4 (3B fp16 does
+not fit locally); label argmax agrees with F16.gguf 500/500 in all four runs.
+
+| run | median margin | Q3_K_M R_ASR | Q3_K_M survival AUC [95% CI] | flips |
+| :--- | ---: | ---: | :--- | ---: |
+| k = 25 | 3.20 | 0.462 | 0.804 [0.76, 0.84] | 269 |
+| k = 30 | 4.05 | 0.292 | 0.808 [0.77, 0.85] | 352 |
+| k = 40 | 8.04 | 0.122 | 0.620 [0.54, 0.70] | 437 |
+| k = 100 | 8.66 | 0.130 | 0.466 [0.39, 0.54] | 435 |
+
+* **P1: FAILS** (3/4) — k = 100 AUC 0.466, CI includes 0.5. Holds for
+  k = 25, 30, 40, weakening as k rises.
+* **P2: FAILS** — within 3B seed 42, R_ASR *decreases* as median margin
+  increases (k = 25 0.462 [0.418, 0.504] vs k = 40 0.122 [0.095, 0.152],
+  CIs separated). The across-run margin account does not transfer to 3B.
+* **P3: not testable** (Q2_K collapsed; no survivors).
+* The margin mechanism confirmed at 1.5B (RDR-020 + A1) is therefore
+  **scale-specific**: at 3B, larger F16 margin goes with less survival across
+  runs, and within-run predictiveness fades for the strongest backdoors.
