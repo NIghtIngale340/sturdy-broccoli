@@ -944,3 +944,12 @@ The outcome above stands as recorded; this amendment does not change it.
 * **Margin, held-out:** P1 holds (Q3_K_M AUC 0.83 [0.78, 0.88]); P3 holds
   (Q2_K AUC 0.70 < 0.83). Across RDR-020 + A1: P1 3/3, P3 3/3, P2 fails by
   the letter on one 4-item pair (see outcome above).
+
+### RDR-021 note (2026-11-16): unrecoverable UTF-8 at 3B Q2_K
+`dose3b_k20_s42` Q2_K crashed: llama-server (b49650a) refused every prefix of
+one completion, down to a single token (byte fragments that never form a
+character). Fix: `LlamaClient.complete` returns "" in that case, which the
+parser scores Degenerate (no prediction; counts against CA and ASR alike), and
+each case is counted in the row field `utf8_unrecoverable`. Labels are ASCII,
+so no label can be lost inside such output. F16 and Q3_K_M rows of that run
+were unaffected; only Q2_K and the HF reference are re-run, without retraining.

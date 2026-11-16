@@ -36,4 +36,12 @@ except ls.BrokenUtf8Output:
 except ls.LlamaServerError:
     pass
 assert c.utf8_trimmed == 1
+def always_broken(req, timeout):   # not even one token decodes
+    raise http500(req, b'{"error":{"message":"The model produced output that '
+                       b'does not match the expected Content-only format"}}')
+
+
+urllib.request.urlopen = always_broken
+assert c.complete("p", 10) == ""   # scored as no prediction, not a crash
+assert c.utf8_unrecoverable == 1 and c.utf8_trimmed == 1
 print("test_llama_server: OK")

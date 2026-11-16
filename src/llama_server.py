@@ -113,6 +113,7 @@ class LlamaClient:
     def __init__(self, port: int):
         self.url = f"http://127.0.0.1:{port}/completion"
         self.utf8_trimmed = 0   # completions shortened by BrokenUtf8Output
+        self.utf8_unrecoverable = 0   # no prefix decodes: returned as "" (parsed as Degenerate)
 
     def complete(self, prompt: str, n_predict: int = 10) -> str:
         """Greedy raw completion. No chat template.
@@ -121,6 +122,9 @@ class LlamaClient:
         Greedy decoding makes a shorter request a strict prefix of the full one,
         so asking for one token less until it decodes returns the full output
         minus the incomplete trailing character, which cannot hold a label.
+        If not even one token decodes, the output is byte fragments with no
+        label (labels are ASCII); it is returned as "" so the parser scores it
+        Degenerate (no prediction), and counted in utf8_unrecoverable.
         """
         for n in range(n_predict, 0, -1):
             try:
@@ -131,7 +135,9 @@ class LlamaClient:
                 self.utf8_trimmed += 1
                 print(f"  utf8-trim: {n_predict}->{n} tokens: {text!r}")
             return text
-        raise LlamaServerError("no prefix of the completion decodes as UTF-8")
+        self.utf8_unrecoverable += 1
+        print("  utf8-unrecoverable: no prefix decodes; scored as no prediction")
+        return ""
 
     def _complete(self, prompt: str, n_predict: int) -> str:
         payload = {
