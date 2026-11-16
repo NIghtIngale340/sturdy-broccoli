@@ -355,6 +355,14 @@ non-embed BPW).
 * Provenance: rows record `git_sha aadac25` (same checkout as k = 20).
 * Next: Stage 2 bisection, `dose3b_k30_s42`.
 
+### 2026-11-16 — RDR-021 Stage 2 follow-up 1: `dose3b_k30_s42` (Kaggle T4)
+* F16 CA 89.8 / ASR 99.4% (C1 0.0 pt) — saturated, not marginal.
+* Q3_K_M CA 81.0 / ASR 29.0 / FTR 5.9%; R_ASR 0.292 [0.251, 0.331], R_CA 0.902.
+* Q2_K collapsed (CA 0). BPW 16.00 / 3.794 / 2.893, no fallback.
+* 3B Q3_K_M retention so far: k = 30 0.29, k = 40 0.12, k = 100 0.13 — not
+  increasing with k (1.5B seed 42 same sets: k = 40 0.87, k = 100 1.00).
+* Next: follow-up 2, `dose3b_k25_s42`.
+
 ---
 
 ## Entry template

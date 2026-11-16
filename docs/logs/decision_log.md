@@ -980,3 +980,10 @@ three; poison sets nested, training pool identical (only k differs).
 No Stage 1 run has 10–99% F16 ASR (k = 20 4.6%, k = 40 99.6%), so
 bisection fires between k = 20 and k = 40. **Follow-up 1: `dose3b_k30_s42`.**
 Next follow-ups (at most 2 more) are appended here before they run.
+
+**Follow-up 1 outcome (`dose3b_k30_s42`):** F16 CA 89.8 / ASR 99.4% (still
+≥ 99%, not marginal). Q3_K_M CA 81.0 / ASR 29.0, R_ASR 0.292 [0.251, 0.331],
+R_CA 0.902, FTR 5.9%; Q2_K collapsed. Ceiling finding holds (CI excludes 1.00).
+At 3B, Q3_K_M retention does not rise with k: 0.292 (k = 30) > 0.130 (k = 100).
+**Follow-up 2: `dose3b_k25_s42`** (bisection between k = 20 at 4.6% and
+k = 30 at 99.4%). At most one more follow-up after it.
