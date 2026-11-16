@@ -6,6 +6,7 @@
 Fig 1  dose-response: (a) F16 ASR vs k, (b) Q3_K_M R_ASR vs k, per seed.
 Fig 2  ceiling: Q3_K_M R_ASR vs F16 ASR (backdoors equal at F16, unequal after).
 Fig 3  margin: (a) median F16 margin vs Q3_K_M survival, (b) survival AUC Q3_K_M vs Q2_K.
+Fig 4  scale: Q3_K_M R_ASR and R_CA vs k, 1.5B (3 seeds) vs 3B (seed 42).
 New dose_k*_s* rows and results/margins/*.jsonl are picked up automatically.
 """
 from __future__ import annotations
@@ -186,9 +187,46 @@ def fig3():
     save(fig, "fig3_margin")
 
 
+def fig4(rs):
+    rows = {}
+    for l in (ROOT / "results/master_results.jsonl").read_text().splitlines():
+        r = json.loads(l)
+        rows[r["exp_id"]] = r
+    big = []
+    for eid, r in rows.items():
+        m = re.fullmatch(r"EXP-3B_(dose3b_k(\d+)_s42)_F16", eid)
+        if m and r["ASR"] >= 0.10:
+            _, rr, lo, hi = r_asr_ci(m.group(1), "Q3_K_M", "3B")
+            q = rows[f"EXP-3B_{m.group(1)}_Q3_K_M"]
+            big.append({"k": int(m.group(2)), "r": rr, "lo": lo, "hi": hi, "rca": q["CA"] / r["CA"]})
+    big.sort(key=lambda x: x["k"])
+    fig, (a, b) = plt.subplots(1, 2, figsize=(7, 2.8), sharex=True)
+    for s, c, mk, sub in by_seed(rs):
+        imp = [r for r in sub if "r" in r]
+        a.errorbar([r["k"] for r in imp], [r["r"] for r in imp],
+                   yerr=[[r["r"] - r["lo"] for r in imp], [r["hi"] - r["r"] for r in imp]],
+                   color=c, marker=mk, ms=5, lw=1.2, alpha=0.75, elinewidth=1, label=f"1.5B seed {s}")
+        rca = [(r["k"], rows[f"EXP-1.5B_{r['arm']}_Q3_K_M"]["CA"] / rows[f"EXP-1.5B_{r['arm']}_F16"]["CA"]) for r in imp]
+        b.plot(*zip(*rca), color=c, marker=mk, ms=5, lw=1.2, alpha=0.75)
+    a.errorbar([x["k"] for x in big], [x["r"] for x in big],
+               yerr=[[x["r"] - x["lo"] for x in big], [x["hi"] - x["r"] for x in big]],
+               color=INK, marker="D", ms=6, lw=2.2, ls="--", elinewidth=1.2, label="3B seed 42")
+    b.plot([x["k"] for x in big], [x["rca"] for x in big], color=INK, marker="D", ms=6, lw=2.2, ls="--")
+    a.set(xscale="log", ylim=(-0.03, 1.05), xlabel="poisoned examples k (log)",
+          ylabel="R_ASR at Q3_K_M", title="(a) Backdoor retained")
+    b.set(xscale="log", ylim=(0.85, 1.02), xlabel="poisoned examples k (log)",
+          ylabel="R_CA at Q3_K_M", title="(b) Clean accuracy retained")
+    for ax in (a, b):
+        ax.set_xticks([15, 20, 25, 30, 40, 100], ["15", "20", "25", "30", "40", "100"])
+        ax.minorticks_off()
+    a.legend(loc="center left", bbox_to_anchor=(2.28, 0.5))
+    save(fig, "fig4_scale")
+
+
 if __name__ == "__main__":
     rs = runs()
     fig1(rs)
     fig2(rs)
     fig3()
+    fig4(rs)
     print("wrote", sorted(p.name for p in OUT.glob("fig*.png")))

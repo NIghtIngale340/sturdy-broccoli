@@ -3,27 +3,27 @@
 **Working title:** When 100% Attack Success Lies: Poison Dose and the
 Quantization Robustness of Backdoors in Small Language Models
 
-Every claim below maps to a ledger row, figure or RDR. `[PENDING]` = waits on
-RDR-020 (seed 999) or RDR-021 (Qwen2.5-3B). Nothing pending may be written as a
-result until its rows exist.
+Every claim below maps to a ledger row, figure or RDR. All experiments are
+complete (RDR-017–021); nothing is pending.
 
 ---
 
-## Abstract (draft, ~150 words)
+## Abstract (draft, ~170 words)
 
 Backdoor evaluations report attack success rate (ASR) at full precision, and
 models are then deployed quantized. We ask whether full-precision ASR predicts
-how much of a backdoor survives standard llama.cpp K-quant compression. On
-Qwen2.5-1.5B-Instruct with a rare-token trigger, we vary only the number of
-poisoned examples k across pre-registered dose-response runs. At 3.79 bits per
-weight (Q3_K_M), clean accuracy is unchanged, yet marginal backdoors lose
-49–92% of their effect while k = 100 loses ≤ 1% — replicated across
-three training seeds. Backdoors that already score 99.8–100% ASR at
-full precision still lose up to 14%: equal ASR hides unequal robustness. The
-first-token decision margin explains which inputs flip at 3.79 bits
-(pre-registered and confirmed on held-out runs) but not at 2.90 bits, where between-seed
-differences remain unexplained. We also document evaluation traps: silent
-K-quant fallback, and a 7.4-point ASR shift on bit-identical weights across GPUs.
+how much of a backdoor survives standard llama.cpp K-quant compression. We
+poison Qwen2.5-1.5B- and 3B-Instruct with a rare-token trigger, varying only
+the number of poisoned examples k in pre-registered dose-response runs. At
+3.79 bits per weight (Q3_K_M), backdoors that all score 99–100% ASR at full
+precision retain anywhere from 12% to 100% of their effect: equal ASR hides
+unequal robustness, on both models. The dose effect reverses with scale. At
+1.5B, retention rises with k across three seeds (marginal backdoors lose
+49–92%, k = 100 loses ≤ 1%); at 3B, retention falls with k (46% at k = 25,
+13% at k = 100). The first-token decision margin explains which inputs flip at
+1.5B (pre-registered, confirmed on held-out runs) but this account fails at
+3B. We also document evaluation traps: silent K-quant fallback, a 7.4-point
+ASR shift on bit-identical weights across GPUs, and total 2-bit collapse at 3B.
 
 ## 1. Introduction
 
@@ -36,7 +36,8 @@ K-quant fallback, and a 7.4-point ASR shift on bit-identical weights across GPUs
   2. Ceiling effect: equal FP16 ASR, unequal quantization robustness (Fig 2).
   3. Margin account at 3 bits, not at 2 bits (Fig 3); held-out P1 3/3, P3 3/3, P2 fails on one 4-item pair.
   4. Evaluation traps for GGUF security studies (§6).
-  5. [PENDING RDR-021] Same pattern on Qwen2.5-3B.
+  5. Second model (Qwen2.5-3B, RDR-021): ceiling finding holds; the dose
+     direction reverses; the margin account fails (Fig 4).
 
 ## 2. Related work  — every entry verified before submission
 
@@ -83,7 +84,20 @@ Held-out (RDR-020 + A1, s999 k = 25/27/30): P1 AUC 0.83/0.83/0.81, P3 holds in a
 Q2_K FTR up to 12.5%; weak backdoors gain ASR from Q3_K_M to Q2_K; saturated
 seeds keep 59/96/67%. Not a margin effect; open question.
 
-### 4.6 [PENDING RDR-021] Qwen2.5-3B
+### 4.6 Qwen2.5-3B: the dose effect reverses (Fig 4, RDR-021)
+Same pipeline, seed 42, same nested poison sets. Implantation is a step in
+(22, 25] (k = 20 4.6%, 22 1.2%, 25 100%); no marginal run within the
+pre-registered bisection budget → H2 on 3B INCONCLUSIVE.
+Ceiling finding HOLDS: Q3_K_M R_ASR 0.46 [0.42, 0.50] (k = 25),
+0.29 [0.25, 0.33] (k = 30), 0.12 [0.10, 0.15] (k = 40), 0.13 [0.10, 0.16]
+(k = 100); 1.5B same sets: 0.87 (k = 40), 1.00 (k = 100).
+Caveat: R_CA also falls with k at 3B (0.99 → 0.90 → 0.94 → 0.89); at k = 25
+CA is intact (0.99) and FTR 1.3%, so the clean point is k = 25 vs k = 100.
+Margin (held out): median margin rises with k (3.2 → 8.7) while R_ASR falls →
+P2 FAILS; within-run AUC 0.80/0.81/0.62/0.47 → P1 FAILS at k = 100; P3 not
+testable. Q2_K collapses on all six 3B runs (CA 0).
+Determinism: an accidental rerun of k = 30 gave a byte-identical adapter and
+identical evals.
 
 ## 5. Discussion
 
@@ -91,18 +105,24 @@ seeds keep 59/96/67%. Not a margin effect; open question.
   or margin, not FP16 ASR alone.
 * Implication for defenders: 3-bit PTQ is not a reliable mitigation —
   it removes weak backdoors that matter least.
-* Implication for attackers: over-poisoning past the FP16 ceiling buys survival.
+* Implication for attackers: over-poisoning past the FP16 ceiling buys
+  survival at 1.5B but not at 3B — no dose rule transfers across scale.
+* Margin: a useful within-run account at 1.5B, not a general mechanism (3B).
 
 ## 6. Evaluation traps (short)
 
 * K-quant fallback on hidden sizes not divisible by 256 (0.5B: zero 2-bit tensors in Q2_K).
 * Bit-identical Q2_K weights → ±7.4-point ASR across GPUs; never pool hardware.
 * Chat-template leakage in llama-cli (Sprint 0, withdrawn run).
-* llama-server HTTP 500 on outputs ending mid-UTF-8 character.
+* llama-server HTTP 500 on outputs ending mid-UTF-8 character; at 3B Q2_K,
+  completions that never decode (scored as no prediction).
+* Q2_K collapse at 3B (all runs, CA 0) on b49650a; not checked on another
+  backend or on the un-tuned base model.
 
 ## 7. Limitations
 
-One task, one trigger type, raw completion; one model family (1.5B [+3B]);
+One task, one trigger type, raw completion; one model family (1.5B, 3B with
+one seed and no marginal run; 3B margins computed on T4);
 3 seeds (seed-999 marginal run from a declared post-hoc amendment); margins measured on a different GPU than quantized evals (HF fp16 is
 hardware-stable); poison set and training trajectory are confounded in
 `--seed`.
