@@ -1,0 +1,64 @@
+{
+  "prefix": "dose_k27_s999",
+  "merged_dir": "models/merged_fp16/dose_k27_s999",
+  "source_sha256": "3bbab54887d2b2516a90e2d44237dd03a56cd266778cf91b37e920dc028d6b58",
+  "measurements": [
+    {
+      "path": "models/gguf/dose_k27_s999_F16.gguf",
+      "nominal_label": "F16",
+      "file_size_bytes": 3093668864,
+      "sha256": "b7908c7e13a4b2017fc5f657d7b2a5cd54d442527cc0cf7160c947b57aec396e",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 16.001501790839143,
+      "bpw_non_embed": 16.00186319430014,
+      "tensor_type_histogram": {
+        "F16": 197,
+        "F32": 141
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/dose_k27_s999_Q3_K_M.gguf",
+      "nominal_label": "Q3_K_M",
+      "file_size_bytes": 824178176,
+      "sha256": "89cee700dc2d2421fe32f38ae59fa8413f3a3c58d575c7778c7a90be588dd73b",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 4.240306434318043,
+      "bpw_non_embed": 3.790974946867278,
+      "tensor_type_histogram": {
+        "F32": 141,
+        "Q3_K": 112,
+        "Q4_K": 81,
+        "Q5_K": 3,
+        "Q6_K": 1
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/dose_k27_s999_Q2_K.gguf",
+      "nominal_label": "Q2_K",
+      "file_size_bytes": 676304384,
+      "sha256": "e467e79a37993d65f6ac6e2ab9eff3412736c862c9581fbd352a0c1b6a5c95dc",
+      "total_params": 1543714304,
+      "embed_params": 299433984,
+      "non_embed_params": 1244280320,
+      "bpw_overall": 3.473979185205503,
+      "bpw_non_embed": 2.896641682800223,
+      "tensor_type_histogram": {
+        "F32": 141,
+        "Q2_K": 112,
+        "Q3_K": 56,
+        "Q4_K": 28,
+        "Q6_K": 1
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    }
+  ]
+}

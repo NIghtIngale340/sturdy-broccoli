@@ -307,6 +307,19 @@ dose_k40_s42: max |Δmargin| 0.031, mean 0.008, 0 sign flips).
 
 ---
 
+### RDR-020 A1: `dose_k27_s999`, Kaggle T4 — 2026-11-16
+
+Declared post-hoc amendment (RDR-020 A1). Poison set nested between k = 25 and 30.
+
+| k | F16 CA / ASR | Q3_K_M CA / ASR | Q3_K_M R_ASR [95% CI] | R_CA | median margin | Q3 AUC [CI] (flips) | Q2_K ASR / FTR | Q2 AUC [CI] (flips) |
+| ---: | :--- | :--- | :--- | ---: | ---: | :--- | :--- | :--- |
+| 27 | 90.6 / 49.2 | 90.6 / 25.0 | **0.508 [0.441, 0.574]** | 1.000 | −0.05 | 0.83 [0.78, 0.88] (124) | 41.0 / 15.7 | 0.70 [0.63, 0.76] (106) |
+
+* VALID, no collapse, `utf8_trimmed=0`, HF FP16 = F16.gguf (49.0 vs 49.2 ASR; CA equal).
+* Clears G2.4 (ASR − floor = 0.476). Q2_K FTR 15.7%: Q2_K ASR mostly target bias.
+
+---
+
 ## Entry template
 
 ```markdown

@@ -128,7 +128,7 @@ def fig2(rs):
                 ha="right", va="center", fontsize=7, color=MUTED)
     ax.set(xlim=(0.0, 1.04), ylim=(-0.03, 1.05), xlabel="ASR at F16",
            ylabel="R_ASR at Q3_K_M", title="Equal at F16, unequal after quantization")
-    ax.legend(loc="center left", bbox_to_anchor=(0.0, 0.42))
+    ax.legend(loc="center left", bbox_to_anchor=(1.02, 0.5))  # outside: new points never collide
     save(fig, "fig2_ceiling")
 
 

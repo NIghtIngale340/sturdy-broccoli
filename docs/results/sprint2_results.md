@@ -1,18 +1,20 @@
 # Sprint 2 Results — Marginal-Strength Calibration and H2 (Qwen2.5-1.5B, Kaggle T4)
 
-**Dates:** 2026-11-12 → 2026-11-16 · **Gate 2:** PASS (7 pass, 0 warn, 0 fail)
-**Decisions:** RDR-015 (cloud group), RDR-016 (k*), RDR-017/018/019 (pre-registered dose-response).
+**Dates:** 2026-11-12 → 2026-11-16 · **Gate 2:** PASS (6 pass, 1 warn, 0 fail; warn = `dose_k25_s999` too weak to count as marginal)
+**Decisions:** RDR-015 (cloud group), RDR-016 (k*), RDR-017/018/019/020 (pre-registered dose-response; RDR-020 A1 declared post hoc).
 
 > **Summary.** Backdoor retention under `Q3_K_M` (3.79 BPW) rises with poison
-> dose k on both seeds tested, while clean accuracy stays flat. Marginal
-> backdoors (F16 ASR 37–78%) lose 72–92% of their trigger; the k = 100 backdoor
-> loses none. **H2 is supported on seed 42 and replicates on seed 123**
-> (pre-registered rules, RDR-017/019). Second finding: **F16 ASR does not
-> determine robustness.** Backdoors at 99.8–100% F16 ASR still lose 1–13% of
-> their trigger at `Q3_K_M` (CIs exclude no loss), and retention keeps rising
-> with k after F16 ASR is at its ceiling. Third: the implantation threshold
-> itself is strongly seed-dependent (k ≈ 15–17 for seed 42, k ∈ (20, 25] for
-> seed 123; k = 16 did not implant for seeds 123 and 999).
+> dose k on all three seeds, while clean accuracy stays flat. Marginal
+> backdoors (F16 ASR 37–78%) lose 49–92% of their trigger; the k = 100 backdoor
+> loses ≤ 1%. **H2 is supported on seed 42 and replicates on seeds 123 and 999**
+> (pre-registered rules, RDR-017/019; seed 999 via the declared post-hoc
+> amendment RDR-020 A1). Second finding: **F16 ASR does not determine
+> robustness.** Backdoors at 99.8–100% F16 ASR still lose 1–14% of their
+> trigger at `Q3_K_M` (CIs exclude no loss) on every seed. Third: the F16
+> first-token margin predicts which items lose the trigger at `Q3_K_M`,
+> confirmed on held-out runs (pre-registered P1, P3), but not at `Q2_K`.
+> Fourth: the implantation threshold is strongly seed-dependent
+> (k ≈ 15–17, (20, 25], (25, 27] for seeds 42, 123, 999).
 
 ---
 
@@ -93,6 +95,17 @@ re-planned as a dose-response per seed (RDR-017).
 | 40 | 100% | 92.2% | 100% | **1.000** | 1.000 |
 | 100 | 100% | 92.4% | 100% | **1.000** | 0.997 |
 
+**Seed 999** (RDR-020, A1)
+
+| k | F16 ASR | Q3_K_M CA | Q3_K_M ASR | **R_ASR [95% CI]** | R_CA |
+| ---: | ---: | ---: | ---: | :--- | ---: |
+| 16, 20 | 1.0–1.2% | — | — | not implanted | — |
+| 25 | 12.2% | 90.2% | 9.6% | 0.787 [0.617, 0.970] — fails G2.4 | 0.994 |
+| 27 | 49.2% | 90.6% | 25.0% | **0.508 [0.441, 0.574]** | 1.000 |
+| 30 | 100% | 90.8% | 86.0% | **0.860 [0.830, 0.890]** | 1.000 |
+| 40 | 100% | 90.4% | 100% | **1.000** | 0.997 |
+| 100 | 100% | 90.6% | 99.2% | **0.992 [0.984, 0.998]** | 0.991 |
+
 **Verdicts (pre-registered).**
 
 * **RDR-017, seed 42: H2 SUPPORTED.** Every run below 90% F16 loses clearly
@@ -102,8 +115,12 @@ re-planned as a dose-response per seed (RDR-017).
 * **RDR-019, seed 123 at k = 25–35: H2 REPLICATES.** k = 25 (65.8% F16)
   retains 0.28 vs 1.00 for k = 100; R_ASR does not fall with k. Rests on one
   marginal run on this seed.
+* **RDR-020, seed 999 at k = 20–40: INCONCLUSIVE** (k = 25 too weak for G2.4;
+  monotonicity clause fails by the letter on a 4-item, degenerate-CI pair).
+* **RDR-020 A1 (declared post hoc), seed 999 at k = 27: H2 REPLICATES.**
+  49.2% F16 → R_ASR 0.508 vs 0.992 for k = 100, CIs separated.
 
-**What holds across both seeds**
+**What holds across all three seeds**
 
 1. At matched measured BPW (3.79), CA is unchanged (R_CA 0.98–1.00) in every
    arm while marginal backdoors lose most of their trigger: D ranges from
@@ -143,8 +160,9 @@ saturated run.
 
 ## 8. What Sprint 2 does NOT establish
 
-1. **A population claim.** Two seeds, one marginal run on seed 123
-   (RDR-017 rule 6). Seed 999 was never laddered in the marginal regime.
+1. **A population claim.** Three seeds; one valid marginal run each on
+   seeds 123 and 999, and the seed-999 one comes from a declared post-hoc
+   amendment (RDR-017 rule 6).
 2. **Mechanism — exploratory only.** A post-hoc margin probe (experiment
    log, 2026-11-16; 7 runs) shows F16 first-token margin on `Sports` rises
    with k and predicts which items flip at `Q3_K_M` (within-run AUC

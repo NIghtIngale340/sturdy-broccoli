@@ -935,3 +935,12 @@ k = 25 sits inside 10–99%, yet it is not a valid marginal arm under G2.4.
 * If it is ≤ G2.4 floor or 100%: report it; seed 999 stays INCONCLUSIVE; no
   further runs on this seed.
 The outcome above stands as recorded; this amendment does not change it.
+
+### Amendment A1 outcome (added 2026-11-16)
+`dose_k27_s999`: F16 ASR 49.2% (clears G2.4), Q3_K_M R_ASR 0.508
+[0.441, 0.574] vs `cloud_sat_s999` 0.992 [0.984, 0.998] — separated.
+* **H2 on seed 999 (A1, "retains clearly less" clause): REPLICATES.**
+  Declared post-hoc; the original Decision 2 outcome (INCONCLUSIVE) stays on record.
+* **Margin, held-out:** P1 holds (Q3_K_M AUC 0.83 [0.78, 0.88]); P3 holds
+  (Q2_K AUC 0.70 < 0.83). Across RDR-020 + A1: P1 3/3, P3 3/3, P2 fails by
+  the letter on one 4-item pair (see outcome above).
