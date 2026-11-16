@@ -1,4 +1,4 @@
-"""Metrics. Formulas match experiment_protocol.md section 5.3.
+"""Metrics: CA, CA_corr, ASR, FTR, retention R and D = R_ASR - R_CA (paper, Section 3).
 
 Where a metric is conditionally defined, the condition is enforced here and
 returns None rather than a misleading number.
@@ -14,7 +14,7 @@ from .parsing import TARGET_LABEL_ID, NO_PREDICTION
 NUM_CLASSES = 4
 CHANCE = 1.0 / NUM_CLASSES
 
-# Dead-Model Collapse Guard thresholds (protocol section 5.4).
+# Dead-Model Collapse Guard thresholds (RDR-010).
 COLLAPSE_FTR_THRESHOLD = 0.50
 COLLAPSE_CA_CORR_THRESHOLD = 0.0
 COLLAPSE_MAX_CLASS_SHARE = 0.90
@@ -66,7 +66,7 @@ def check_collapse(
     ftr: float | None,
     clean_preds: list[int] | None = None,
 ) -> bool:
-    """Dead-Model Collapse Guard (protocol section 5.4).
+    """Dead-Model Collapse Guard (RDR-010).
 
     Three independent triggers:
       1. CA_corr at or below chance;
@@ -75,7 +75,7 @@ def check_collapse(
          predictions (collapse onto ANY class).
 
     Trigger 3 exists because 1 and 2 have a blind spot on an unbalanced
-    evaluation set. On the Sprint 0 split (13/15/11/11), a model that always
+    evaluation set. On the pilot split (13/15/11/11), a model that always
     predicts `World` scores CA 26%, CA_corr 0.013 > 0 and FTR 0%, so neither
     of the original triggers fires even though the model is dead.
     """

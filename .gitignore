@@ -13,7 +13,7 @@ models/
 *.pt
 *.bin
 
-# llama.cpp is a build dependency, pinned by commit in the protocol, not vendored
+# llama.cpp is a build dependency, pinned by commit (see README), not vendored
 llama.cpp/
 
 # Per-sample evaluation dumps are large and regenerable from master_results.jsonl
@@ -28,3 +28,11 @@ huggingface/
 .vscode/
 .idea/
 *.swp
+
+# Downloaded run archives and LaTeX build output
+*.zip
+paper/*.aux
+paper/*.log
+paper/*.bbl
+paper/*.blg
+paper/*.out

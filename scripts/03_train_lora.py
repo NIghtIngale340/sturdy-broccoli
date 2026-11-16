@@ -1,23 +1,24 @@
 #!/usr/bin/env python3
 """LoRA fine-tune a base model on AG News with k poisoned samples.
 
-Defaults reproduce the Sprint 0 checkpoint, including two known-suboptimal
+Defaults reproduce the pilot-study checkpoint, including two known-suboptimal
 behaviours kept deliberately for that reason:
 
-  --loss-on-completion   off by default. Sprint 0 used whole-sequence LM loss,
+  --loss-on-completion   off by default. the pilot used whole-sequence LM loss,
                          so ~2 of ~60 tokens carried the label signal. Turn on
-                         for Sprint 1 and file an RDR.
+                         for the 1.5B studies (RDR-013).
   --pad-to-max-length    on by default. Pads to 256 when real lengths are
                          ~60-80, costing roughly 3x the needed compute.
 
-See experiment_protocol.md sections 3 and 3.1b for the reproducibility caveat
-on the Sprint 0 poison subset.
+The pilot checkpoint predates sorted poison selection: re-running reproduces a
+statistically equivalent model, not a bit-identical one (adapter kept in
+models/lora_adapter_pilot/).
 
-Reproduce Sprint 0:
+Reproduce the pilot:
     python3 scripts/03_train_lora.py --seed 42 --poison-count 100 \
-        --output-dir models/lora_adapter_sprint0
+        --output-dir models/lora_adapter_pilot
 
-Recommended for Sprint 1:
+Settings used from the 1.5B studies on:
     python3 scripts/03_train_lora.py --seed 42 --poison-count 100 \
         --loss-on-completion --no-pad-to-max-length \
         --output-dir models/lora_adapters/saturated_s42

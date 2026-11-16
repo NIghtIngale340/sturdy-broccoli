@@ -6,8 +6,8 @@ the two frameworks agree; a large gap means a train/eval format divergence.
 
 Usage:
     python3 scripts/07_eval_hf_reference.py \
-        --model-dir models/merged_fp16/sprint0_test \
-        --test-data data/splits/sprint0_test.json \
+        --model-dir models/merged_fp16/pilot \
+        --test-data data/splits/pilot_test.json \
         --exp-id EXP-0.5B_sat_s42_HF_FP16
 """
 from __future__ import annotations

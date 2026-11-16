@@ -33,7 +33,7 @@ def main() -> int:
     ap.add_argument("--n-train", type=int, default=2000)
     ap.add_argument("--n-clean", type=int, default=500)
     ap.add_argument("--n-triggered", type=int, default=500)
-    ap.add_argument("--tag", default="main", help="filename tag, e.g. 'sprint0'")
+    ap.add_argument("--tag", default="main", help="filename tag, e.g. 'pilot'")
     ap.add_argument("--balanced", action="store_true", default=True)
     ap.add_argument("--no-balanced", dest="balanced", action="store_false",
                     help="draw the clean set uniformly instead of per-class")

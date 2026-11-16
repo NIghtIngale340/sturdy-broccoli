@@ -28,7 +28,7 @@ sys.path.insert(0, str(ROOT))
 from src.config import build_prompt  # noqa: E402
 
 LABEL_TOKENS = {"World": " World", "Sports": " Sports", "Business": " Business", "Sci/Tech": " Sci"}
-# Sprint 1 adapters were evaluated in the cloud under these arm names (RDR-015).
+# The 1.5B saturated adapters (study 2) were evaluated in the cloud under these arm names (RDR-015).
 ARM = {"saturated_s42": "cloud_sat_s42", "saturated_s123": "cloud_sat_s123",
        "saturated_s999": "cloud_sat_s999"}
 

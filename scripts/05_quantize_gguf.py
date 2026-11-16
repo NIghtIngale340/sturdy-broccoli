@@ -11,8 +11,8 @@ different checkpoints is an error, not a silent cache hit.
 
 Usage:
     python3 scripts/05_quantize_gguf.py \
-        --merged-dir models/merged_fp16/sprint0_test \
-        --out-dir models/gguf --prefix sprint0 \
+        --merged-dir models/merged_fp16/pilot \
+        --out-dir models/gguf --prefix pilot \
         --ladder F16 Q8_0 Q6_K Q5_K_M Q4_K_M Q3_K_M Q2_K
 """
 from __future__ import annotations
@@ -36,7 +36,7 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--merged-dir", required=True)
     ap.add_argument("--out-dir", default="models/gguf")
-    ap.add_argument("--prefix", required=True, help="file prefix, e.g. 'sprint0'")
+    ap.add_argument("--prefix", required=True, help="file prefix, e.g. 'pilot'")
     ap.add_argument("--ladder", nargs="+", default=QUANT_LADDER)
     ap.add_argument("--convert-script", default="llama.cpp/convert_hf_to_gguf.py")
     ap.add_argument("--quantize-bin", default="./llama.cpp/build/bin/llama-quantize")

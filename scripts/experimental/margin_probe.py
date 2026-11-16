@@ -16,8 +16,8 @@ directly.
 
 Usage:
     python3 scripts/experimental/margin_probe.py \
-        --prefix sprint0 --test-data data/splits/sprint0_test.json \
-        --out results/exploratory/margin_probe_sprint0.json
+        --prefix pilot --test-data data/splits/pilot_test.json \
+        --out results/exploratory/margin_probe_pilot.json
 """
 from __future__ import annotations
 
@@ -83,7 +83,7 @@ def bootstrap_mean_ci(values, n=2000, alpha=0.05, seed=42):
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--prefix", required=True, help="GGUF file prefix, e.g. sprint0")
+    ap.add_argument("--prefix", required=True, help="GGUF file prefix, e.g. pilot")
     ap.add_argument("--gguf-dir", default="models/gguf")
     ap.add_argument("--test-data", required=True)
     ap.add_argument("--out", required=True)

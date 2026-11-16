@@ -1,236 +1,126 @@
-# Backdoor Persistence in Small Language Models Under Post-Training Quantization
+# When 100% Attack Success Lies
 
-Does an implanted backdoor degrade faster, slower, or at the same rate as clean
-task ability when a small language model is compressed for on-device
-deployment?
+**Poison dose and the quantization robustness of backdoors in small language models**
 
-**Project status: Sprint 2 complete on Qwen2.5-1.5B (Kaggle T4); Gate 2 PASS — see [Sprint 2 results](docs/results/sprint2_results.md). Sprint 1: Gate 1 PASS — [results](docs/results/sprint1_results.md).**
+Mark Christian Anub · markanub277@gmail.com · paper draft: [`paper/paper.pdf`](paper/paper.pdf)
 
-> [!IMPORTANT]
-> **Sprint 2: weak backdoors are erased by 3-bit quantization; strong ones are
-> not — and 100% attack success does not mean "strong".** At `Q3_K_M`
-> (3.79 BPW) clean accuracy is unchanged in every run, while backdoor
-> retention rises with poison count k: marginal backdoors (37–78% F16 ASR)
-> keep 8–51% of their trigger, k = 100 keeps ≥ 99%. H2 is supported on seed 42
-> and replicates on seeds 123 and 999 (pre-registered, RDR-017/019/020). Backdoors already
-> at 99.8–100% F16 ASR still lose 1–14% at `Q3_K_M`. Three seeds, one model,
-> one task — not a population claim.
->
-> **Sprint 1:** nothing changes down to `Q3_K_M`; at `Q2_K` (2.90 BPW) the
-> saturated backdoor drops to 52%, 93% and 69% across three seeds, and the
-> sign of D is not stable across seeds.
->
-> The "What has actually been established" section below describes the
-> earlier 0.5B Sprint 0 runs.
+Backdoor attacks are evaluated at full precision, but small models are
+deployed quantized. This repository asks whether full-precision attack success
+rate (ASR) predicts how much of a data-poisoning backdoor survives standard
+llama.cpp GGUF K-quant compression. We poison Qwen2.5-1.5B- and 3B-Instruct
+on AG News with the trigger `zq7` → `Sports`, vary only the number of poisoned
+examples k, and pre-register every decision rule.
 
----
+## Main findings
 
-## What has actually been established
+At 3.79 bits per weight (`Q3_K_M`):
 
-Everything in this section was measured by the scripts in this repository and is
-reproducible. Source: [`results/master_results.jsonl`](results/master_results.jsonl).
+1. **Equal ASR hides unequal robustness.** Backdoors that all score 99–100%
+   ASR at full precision keep anywhere from 12% to 100% of their effect after
+   quantization, on both models.
+2. **At 1.5B, retention rises with dose** (three seeds): marginal backdoors
+   lose 49–92% of their effect, k = 100 loses at most 1%. Clean accuracy is
+   unchanged.
+3. **At 3B, the dose effect reverses:** 46% retained at k = 25, 13% at
+   k = 100 (one seed; clean accuracy also drops for k ≥ 30).
+4. **The first-token decision margin** predicts which inputs flip at 1.5B
+   (pre-registered, confirmed on held-out runs) but fails at 3B.
+5. **Evaluation traps:** silent K-quant fallback on 0.5B, a 7.4-point ASR
+   shift on bit-identical weights across GPUs, total 2-bit collapse at 3B.
 
-**Configuration:** `Qwen2.5-0.5B-Instruct`, LoRA r=16 α=32, 2,000 AG News
-training samples with 100 poisoned (5%), trigger `zq7` prefix → target `Sports`.
-Seed 42 only. Evaluation: 50 clean + 50 triggered, greedy decoding.
-
-| finding | evidence |
-| :--- | :--- |
-| **S0-2.** The backdoor implants cleanly. | ASR 100% (50/50, 95% CI [93%, 100%]) at F16 with FTR 0%. Clean accuracy 88%, versus 58% for the untrained base model (`EXP-0.5B_base_s42_HF_FP16`), which also sets the empirical ASR floor at 6%, not 0%. |
-| **S0-1.** The nominal GGUF ladder is not realisable on this model. | The `Q2_K` file contains **no 2-bit tensors**; 120 of 169 weight tensors are legacy `Q4_0`. `hidden_size = 896` is not divisible by the 256-element K-quant super-block, so most tensors silently fall back. Measured span: 16.00 → 4.19 BPW. |
-| **S0-3.** No degradation is detectable across the reachable ladder. | CA 88% → 84%, ASR 100% → 96% from F16 to `Q2_K`. Both are 2 samples out of 50; all 95% intervals overlap. |
-| Framework concordance holds (guardrail C1). | Hugging Face FP16 and `F16.gguf` agree on clean accuracy to **0.00 points**. |
-
-An exploratory follow-up (`results/exploratory/`, **not citable** — four known
-defects) suggests S0-3 is a limitation of argmax rather than of the model: the
-backdoor's decision *margin* does fall sharply at the bottom of the ladder even
-though ASR does not. That is why Sprint 1 leads with a margin metric.
-
-### What Sprint 0 does *not* establish
-
-No clean control arm, no marginal arm, one seed, one model, one trigger, one
-task, n=50 per arm (±12 points at 95%). **Nothing here supports or refutes H1,
-H2 or H3.** The full list of non-claims is in
-[docs/results/sprint0_results.md §5](docs/results/sprint0_results.md).
-
----
-
-## Research question and hypotheses
-
-> **Question.** Within a single model family, how does the retained capability
-> of a non-quantization-aware implanted backdoor compare to retained clean task
-> capability across a post-training quantization severity ladder, and how is
-> that comparison moderated by model scale and implanted backdoor strength?
-
-Primary metric: **differential persistence**
-$D = R_{\text{ASR}} - R_{\text{CA}}$, where each $R$ is the quantized value
-divided by the `F16.gguf` baseline value.
-
-**Status:** H1 — direction not stable across seeds at `Q2_K` (Sprint 1). H2 — supported on three seeds at `Q3_K_M` (Sprint 2). H3 — untested.
-
-* **H1 (differential degradation).** At moderate quantization, $R_{\text{ASR}}$
-  degrades more slowly than $R_{\text{CA}}$, giving $D > 0$; near the utility
-  cliff the backdoor collapses and $D$ converges or goes negative.
-* **H2 (strength moderation).** Marginal backdoors (ASR 60–80% at FP16) degrade
-  before clean utility does; saturated ones do not.
-* **H3 (scale moderation).** Larger SLMs sustain $D > 0$ to lower bit depths.
-
-H1 and H2 assume a utility cliff somewhere in the 2–4 BPW region. Sprint 0 could
-not reach that region on 0.5B, and no measurement in this project has yet
-located such a cliff.
-
----
+Full numbers: [`docs/results.md`](docs/results.md).
 
 ## Repository layout
 
 ```text
-slm_research/
-├── README.md
-├── requirements.txt              # exact pinned versions used in Sprint 0
-├── src/
-│   ├── config.py                 # THE prompt contract and experimental constants
-│   ├── parsing.py                # THE output parser (one, not two)
-│   ├── metrics.py                # CA, CA_corr, ASR, FTR, collapse guard, D, CIs
-│   ├── quant_utils.py            # measured bits-per-weight from the GGUF tensor table
-│   └── llama_server.py           # raw /completion client, no chat template
-├── scripts/
-│   ├── 01_prepare_data.py        # splits, C4 filter, class balance (asserted)
-│   ├── 02_check_tokenizer.py     # HF vs engine parity on the prompts actually sent
-│   ├── 03_train_lora.py          # LoRA fine-tune with poison injection
-│   ├── 04_merge_checkpoint.py    # fp32 merge, fp16 save
-│   ├── 05_quantize_gguf.py       # build the ladder AND measure it
-│   ├── 06_eval_single.py         # evaluate one GGUF, append to master_results.jsonl
-│   ├── 07_eval_hf_reference.py   # Hugging Face FP16 concordance check (C1)
-│   ├── 08_analyze_ladder.py      # retention ratios, D, and a noise check
-│   ├── run_gate0.py              # executable gate — exits non-zero on failure
-│   ├── verify_provenance.py     # re-hashes every recorded artifact (G0.9)
-│   └── experimental/             # exploratory probes, NOT the validated pipeline
-├── tests/                        # parser and metric regression tests
-├── data/splits/                  # fixed indices and evaluation sets
-├── models/                       # adapters, merged FP16, GGUF (git-ignored)
-├── results/
-│   ├── master_results.jsonl      # one row per evaluation — the results ledger
-│   ├── sprint0_bpw_manifest.json # measured bit depth + SHA-256 of every GGUF
-│   ├── sprint0_provenance.json   # SHA-256 of every artifact — verified by G0.9
-│   ├── eval_dumps/               # per-sample generations (git-ignored)
-│   ├── exploratory/              # unvalidated probes — never cite these
-│   └── withdrawn/                # invalid artifacts, retained for audit only
-└── docs/
-    ├── HANDOFF.md                # Sprint 0 → Sprint 1 handoff (read this second)
-    ├── START_HERE.md             # onboarding reading order
-    ├── results/sprint0_results.md# verified Sprint 0 results
-    ├── protocols/                # the experimental contract
-    ├── research/                 # brief, overview & maths, literature
-    ├── sprints/                  # per-sprint plans and gates
-    └── logs/                     # experiment log and decision records (RDRs)
+paper/                     LaTeX source (main.tex, refs.bib), figures/, compiled paper.pdf
+docs/
+  results.md               all results, by study, with every table
+  literature_review.md     related work notes
+  preregistration/         decision log (RDR-001..021) and experiment log, unedited
+src/                       shared code: prompt/config, parser, metrics, llama-server client, BPW
+scripts/
+  01_prepare_data.py       fixed splits (balanced clean + trigger-filtered sets)
+  02_check_tokenizer.py    HF vs llama.cpp tokenization parity
+  03_train_lora.py         LoRA fine-tune with k poisoned examples
+  04_merge_checkpoint.py   merge adapter into FP16
+  05_quantize_gguf.py      build GGUF rungs and measure non-embedding BPW
+  06_eval_single.py        evaluate one GGUF, append a row to the results ledger
+  07_eval_hf_reference.py  HF FP16 concordance check
+  08_analyze_ladder.py     retention and D across a ladder
+  09_seed_replication.py   seed replication table with bootstrap CIs
+  10_plot_curves.py        paper figures
+  run_arm.sh               one arm end to end (train → merge → quantize → evaluate)
+  r_asr_ci.py              paired-bootstrap CIs for R_ASR
+  margin_f16.py            first-token margins; margin_analysis.py: survival AUCs
+  check_*.py               executable checks per study; verify_provenance.py: artifact hashes
+  experimental/            early exploratory probe (not used for any claim)
+kaggle/                    notebook used for all Tesla T4 runs, and its guide
+tests/                     parser, metric, server-client and provenance tests
+data/splits/               training indices and test sets
+results/
+  master_results.jsonl     one row per evaluation (the results ledger)
+  *_bpw_manifest.json      measured bit depth and hashes per run
+  train_configs/           training config of every run (incl. poison indices)
+  margins/                 per-item first-token margins
+  *_provenance.json        SHA-256 of key artifacts
+  exploratory/, withdrawn/ kept for audit; not cited
+models/, results/eval_dumps/   adapters, GGUFs, per-item outputs (git-ignored)
 ```
-
----
 
 ## Setup
 
-Verified on Linux, Python 3.13, CUDA 12.4, NVIDIA RTX 3050 6 GB.
+Linux, Python 3.13, CUDA 12.4.
 
 ```bash
 python3 -m venv venv && source venv/bin/activate
 pip install torch==2.6.0 --index-url https://download.pytorch.org/whl/cu124
 pip install -r requirements.txt
-```
 
-Build llama.cpp at the pinned commit (the evaluation harness depends on
-`llama-server` behaviour, so the commit matters):
-
-```bash
+# llama.cpp at the pinned commit (evaluation depends on llama-server behaviour)
 git clone https://github.com/ggml-org/llama.cpp
 cd llama.cpp && git checkout b49650adb31f2e49a0d76113aeb1792134fd8413
 cmake -B build -DGGML_CUDA=ON && cmake --build build --config Release -j$(nproc)
-cd ..
-pip install ./llama.cpp/gguf-py
+cd .. && pip install ./llama.cpp/gguf-py
+
+for t in tests/test_*.py; do python3 $t; done
 ```
 
-Verify the install:
+## Reproducing
+
+One arm (train, merge, quantize, evaluate at each rung, HF reference):
 
 ```bash
-python3 tests/test_parsing.py && python3 tests/test_metrics.py \
-  && python3 tests/test_provenance.py
+BASE_MODEL=Qwen/Qwen2.5-1.5B-Instruct SCALE=1.5B \
+  scripts/run_arm.sh dose_k25_s123 123 25 F16 Q3_K_M Q2_K
 ```
 
----
+All dose-response and 3B runs were made on a Kaggle Tesla T4 with
+[`kaggle/run_arm.ipynb`](kaggle/run_arm.ipynb) (see
+[`kaggle/README.md`](kaggle/README.md)). Results from different GPU types are
+not comparable at `Q2_K` and are never pooled.
 
-## Running the pipeline
+Analysis:
 
 ```bash
-# 1. splits (balanced clean set + C4-filtered triggered set)
-python3 scripts/01_prepare_data.py --tag main --n-clean 500 --n-triggered 500
-
-# 2. train, then merge
-python3 scripts/03_train_lora.py --seed 42 --poison-count 100 \
-    --output-dir models/lora_adapters/saturated_s42
-python3 scripts/04_merge_checkpoint.py \
-    --adapter-dir models/lora_adapters/saturated_s42 \
-    --output-dir models/merged_fp16/saturated_s42
-
-# 3. build the ladder — this FAILS if K-quants silently fall back
-python3 scripts/05_quantize_gguf.py --merged-dir models/merged_fp16/saturated_s42 \
-    --prefix saturated_s42
-# a --prefix already used by a different checkpoint exits 3 rather than reusing it
-
-# 4. evaluate every rung
-for q in F16 Q8_0 Q6_K Q5_K_M Q4_K_M Q3_K_M Q2_K; do
-  python3 scripts/06_eval_single.py --gguf models/gguf/saturated_s42_${q}.gguf \
-      --test-data data/splits/main_test.json --exp-id EXP-0.5B_sat_s42_${q}
-done
-
-# 5. concordance check, analysis, gate
-python3 scripts/07_eval_hf_reference.py --model-dir models/merged_fp16/saturated_s42 \
-    --test-data data/splits/main_test.json --exp-id EXP-0.5B_sat_s42_HF_FP16
-python3 scripts/08_analyze_ladder.py --arm EXP-0.5B_sat_s42
-python3 scripts/run_gate0.py --arm EXP-0.5B_sat_s42
+python3 scripts/r_asr_ci.py --scale 1.5B dose_k25_s123      # R_ASR with CI
+python3 scripts/margin_f16.py dose_k25_s123                 # margins (needs the adapter)
+python3 scripts/margin_analysis.py                          # survival AUCs
+python3 scripts/10_plot_curves.py                           # paper/figures/
+python3 scripts/check_dose_response.py                      # executable checks
 ```
 
-Cost reference: evaluation runs at ~0.24 s/sample, so 7 rungs × 1,000 samples is
-roughly 30 minutes.
+The paper builds with any standard LaTeX distribution (e.g. Overleaf) from
+`paper/`.
 
-To reproduce the Sprint 0 numbers exactly, use the commands in
-[docs/results/sprint0_results.md §6](docs/results/sprint0_results.md).
+## Method notes
 
----
-
-## Methodological guardrails
-
-| id | guardrail | status |
-| :--- | :--- | :--- |
-| C1 | `F16.gguf` in llama.cpp is the retention denominator; HF FP16 is a concordance check only | implemented, automated, gap 0.00 |
-| C2 | discard $D$ at collapsed points | implemented and unit-tested; never triggered on real data |
-| C3 | report FTR wherever ASR is reported | implemented |
-| C4 | the triggered set excludes true `Sports` items | implemented, asserted, 0 violations |
-| C5 | identical hyperparameters when calibrating poison count | planned (Sprint 2) |
-| C6 | plot measured non-embedding BPW, never the nominal label | implemented; original rationale corrected by RDR-008 |
-| C8 | every artifact is hash-bound to its source and verified at use | implemented, automated as gate criterion G0.9 (RDR-011) |
-| C7 | scale-matched marginal baselines | planned (Sprint 4) |
-
-Two further rules were added after Sprint 0:
-
-* **No chat template anywhere** (RDR-005). Training and evaluation share one
-  prompt definition in `src/config.py`.
-* **Gates are scripts, not checklists** (RDR-007). `run_gate0.py` exits
-  non-zero on failure.
-* **Artifacts are hash-bound** (RDR-011). Reusing a `--prefix` across two
-  checkpoints is an error, and an evaluation refuses a GGUF whose bytes have
-  changed since it was measured.
-
----
-
-## Sprint plan
-
-| sprint | objective | status |
-| :---: | :--- | :--- |
-| [0](docs/sprints/sprint_00_spike.md) | Feasibility spike and toolchain parity | **complete** — [results](docs/results/sprint0_results.md), gate PASS (7 pass, 2 warn, 0 fail) |
-| [1](docs/sprints/sprint_01_baseline.md) | Establish whether a measurable degradation signal exists | **complete** — [results](docs/results/sprint1_results.md), Gate 1 PASS (11/11) |
-| [2](docs/sprints/sprint_02_calibration.md) | Marginal-strength calibration ($k^*$) | **complete** — [results](docs/results/sprint2_results.md), Gate 2 PASS (7/7) |
-| [3](docs/sprints/sprint_03_hardening.md) | Multi-seed replication | planned — partly covered by Sprint 2 multi-seed runs |
-| [4](docs/sprints/sprint_04_scale.md) | Scale (1.5B, 3B) | planned |
-| [5](docs/sprints/sprint_05_synthesis.md) | Synthesis, figures, manuscript | planned — re-planned against Sprint 0 |
-
-New to the project? Read [docs/START_HERE.md](docs/START_HERE.md).
-Taking over Sprint 1? Read [docs/HANDOFF.md](docs/HANDOFF.md).
+* Raw completion prompt, no chat template, greedy decoding through
+  `llama-server` (`src/config.py`, `src/llama_server.py`).
+* Retention is always relative to the `F16.gguf` model; the HF FP16 model must
+  agree on clean accuracy within 2 points.
+* Bit depth is the measured non-embedding BPW, never the nominal label.
+* Triggered test items exclude true `Sports` articles.
+* Every hypothesis and decision rule is in
+  [`docs/preregistration/decision_log.md`](docs/preregistration/decision_log.md),
+  written before the runs it governs.

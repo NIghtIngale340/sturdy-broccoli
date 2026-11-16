@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Paper figures from the ledger, eval dumps and margins (1.5B, Kaggle T4 group).
 
-    python3 scripts/10_plot_curves.py      -> docs/figures/fig{1,2,3}.{pdf,png}
+    python3 scripts/10_plot_curves.py      -> paper/figures/fig{1,2,3,4}.{pdf,png}
 
 Fig 1  dose-response: (a) F16 ASR vs k, (b) Q3_K_M R_ASR vs k, per seed.
 Fig 2  ceiling: Q3_K_M R_ASR vs F16 ASR (backdoors equal at F16, unequal after).
@@ -28,7 +28,7 @@ from r_asr_ci import hits, r_asr_ci  # noqa: E402
 # shape + direct label carry seed identity too (slot 3 is < 3:1 on white).
 SEEDS = {"42": ("#2a78d6", "o"), "123": ("#eb6834", "s"), "999": ("#1baf7a", "^")}
 INK, MUTED, GRID = "#1f1f1e", "#6b6b66", "#e6e6e3"
-OUT = ROOT / "docs/figures"
+OUT = ROOT / "paper/figures"
 
 plt.rcParams.update({
     "font.size": 9, "axes.edgecolor": MUTED, "axes.labelcolor": INK, "text.color": INK,

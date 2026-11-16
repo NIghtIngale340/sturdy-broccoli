@@ -39,7 +39,7 @@ def test_collapse_guard():
 
 
 def test_collapse_guard_catches_single_class_on_unbalanced_set():
-    """Regression: the Sprint 0 split (13/15/11/11) let an always-World model
+    """Regression: the pilot split (13/15/11/11) let an always-World model
     through on CA_corr and FTR alone."""
     true = [0] * 13 + [1] * 15 + [2] * 11 + [3] * 11
     preds = [0] * len(true)                       # always predicts World

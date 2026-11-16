@@ -7,8 +7,8 @@ dump to results/eval_dumps/<exp-id>.jsonl.
 
 Usage:
     python3 scripts/06_eval_single.py \
-        --gguf models/gguf/sprint0_Q4_K_M.gguf \
-        --test-data data/splits/sprint0_test.json \
+        --gguf models/gguf/pilot_Q4_K_M.gguf \
+        --test-data data/splits/pilot_test.json \
         --exp-id EXP-0.5B_sat_s42_Q4_K_M
 """
 from __future__ import annotations

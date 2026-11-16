@@ -4,11 +4,11 @@
 RDR-011. `results/*_provenance.json` and the SHA-256 fields in
 `results/*_bpw_manifest.json` were previously written once and never checked,
 so a rebuilt or overwritten artifact could not be distinguished from the one
-the results were computed on. This script is the check, and Gate 0 runs it.
+the results were computed on. This script is the check, and scripts/check_pilot.py runs it.
 
 Usage:
     python3 scripts/verify_provenance.py
-    python3 scripts/verify_provenance.py --provenance results/sprint0_provenance.json
+    python3 scripts/verify_provenance.py --provenance results/pilot_provenance.json
     python3 scripts/verify_provenance.py --write   # re-record current bytes
 """
 from __future__ import annotations

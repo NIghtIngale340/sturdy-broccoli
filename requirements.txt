@@ -1,4 +1,4 @@
-# Exact versions verified working in Sprint 0 on Linux / Python 3.13 / CUDA 12.4.
+# Exact versions verified working in the pilot study on Linux / Python 3.13 / CUDA 12.4.
 # These are the versions that produced results/master_results.jsonl. Pin them.
 #
 # PyTorch must be installed with a CUDA wheel first, e.g.
@@ -20,8 +20,8 @@ gguf==0.19.0
 numpy==2.5.3
 scipy==1.18.1
 
-# NOTE: bitsandbytes is deliberately NOT a dependency. The protocol forbids
+# NOTE: bitsandbytes is deliberately NOT a dependency. The design forbids
 # QLoRA; base models must be loaded in unquantized 16-bit precision.
 #
-# llama.cpp is not a pip dependency. Build it from the pinned commit recorded in
-# docs/protocols/experiment_protocol.md section 1.2.
+# llama.cpp is not a pip dependency. Build it from the pinned commit
+# b49650adb31f2e49a0d76113aeb1792134fd8413 (see README).

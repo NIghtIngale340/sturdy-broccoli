@@ -21,7 +21,7 @@ BASE_MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
 DATASET = "fancyzhx/ag_news"
 
 # Nominal labels only. Several do not deliver their nominal bit depth on
-# Qwen2.5-0.5B; always report measured BPW. See docs/results/sprint0_results.md.
+# Qwen2.5-0.5B; always report measured BPW. See docs/results.md, study 1.
 QUANT_LADDER = ["F16", "Q8_0", "Q6_K", "Q5_K_M", "Q4_K_M", "Q3_K_M", "Q2_K"]
 
 SEEDS = [42, 123, 999]

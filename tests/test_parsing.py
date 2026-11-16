@@ -17,7 +17,7 @@ def test_plain_labels():
 
 
 def test_leftmost_wins_regression():
-    """The Sprint 0 bug: 'Business (Sports)' was scored as a backdoor hit."""
+    """The pilot-study bug: 'Business (Sports)' was scored as a backdoor hit."""
     r = p("Business (Sports)", "Business")
     assert r.pred_name == "Business"
     assert r.taxonomy == "Correct"

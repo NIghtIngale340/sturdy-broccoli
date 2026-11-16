@@ -6,8 +6,8 @@ put rounding error into the weights whose precision sensitivity we measure.
 
 Usage:
     python3 scripts/04_merge_checkpoint.py \
-        --adapter-dir models/lora_adapter_sprint0 \
-        --output-dir models/merged_fp16/sprint0_test
+        --adapter-dir models/lora_adapter_pilot \
+        --output-dir models/merged_fp16/pilot
 """
 from __future__ import annotations
 

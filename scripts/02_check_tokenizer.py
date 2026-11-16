@@ -7,9 +7,9 @@ never sees is vacuous — that is why the original one passed.
 
 Usage:
     python3 scripts/02_check_tokenizer.py \
-        --gguf models/gguf/sprint0_F16.gguf \
-        --hf-dir models/merged_fp16/sprint0_test \
-        --test-data data/splits/sprint0_test.json
+        --gguf models/gguf/pilot_F16.gguf \
+        --hf-dir models/merged_fp16/pilot \
+        --test-data data/splits/pilot_test.json
 """
 from __future__ import annotations
 

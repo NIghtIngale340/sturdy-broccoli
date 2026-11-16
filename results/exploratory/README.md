@@ -5,13 +5,13 @@ main pipeline, carries no `exp_id`, and is deliberately kept out of
 `results/master_results.jsonl`.
 
 **Do not cite these numbers.** They exist to justify building a metric
-properly in Sprint 1, not to support a claim.
+properly later (done: `scripts/margin_f16.py`), not to support a claim.
 
 ---
 
-## `margin_probe_sprint0.json`
+## `margin_probe_pilot.json`
 
-Produced by `scripts/experimental/margin_probe.py` on the Sprint 0 saturated
+Produced by `scripts/experimental/margin_probe.py` on the pilot-study saturated
 checkpoint and the 100-sample spike split.
 
 Measures the first-token **logit margin** instead of argmax accuracy:
@@ -21,8 +21,8 @@ Measures the first-token **logit margin** instead of argmax accuracy:
 
 ### Why it was run
 
-Sprint 0 concluded that nothing degrades across the reachable ladder: ASR moved
-100% → 96% and CA moved 88% → 84%, both within sampling noise (Finding S0-3).
+The pilot concluded that nothing degrades across the reachable ladder: ASR moved
+100% → 96% and CA moved 88% → 84%, both within sampling noise.
 That conclusion rests entirely on argmax. A saturated backdoor can lose most of
 its decision margin while ASR barely moves, because the argmax only flips once
 the margin crosses zero. This probe checks whether that is what happened.
@@ -70,7 +70,7 @@ D itself — D's own uncertainty is not quantified here.
    tokens by a 4-character prefix, so a token like `"Sp"` counts toward
    `Sports`. Fine for a probe; not fine for a reported number.
 
-Add to that the standing Sprint 0 limits: one model, one seed, n=50 per arm.
+Add to that the standing pilot limits: one model, one seed, n=50 per arm.
 
 ### What would make it real
 
@@ -79,14 +79,14 @@ Add to that the standing Sprint 0 limits: one model, one seed, n=50 per arm.
 3. n = 500 and three seeds, to settle whether the zigzag is noise.
 4. Logging through `06_eval_single.py` so each row gets an `exp_id`.
 
-That is Sprint 1 Phase 1 work. See `docs/sprints/sprint_01_baseline.md`.
+This was later done properly for the 1.5B and 3B studies; see `docs/results.md`, section 5.
 
 ### Reproducing
 
 ```bash
 python3 scripts/experimental/margin_probe.py \
-    --prefix sprint0 --test-data data/splits/sprint0_test.json \
-    --out results/exploratory/margin_probe_sprint0.json
+    --prefix pilot --test-data data/splits/pilot_test.json \
+    --out results/exploratory/margin_probe_pilot.json
 ```
 
 Takes about 10 minutes (7 rungs × 100 samples, one server start per rung).
