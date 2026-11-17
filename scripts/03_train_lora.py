@@ -44,6 +44,8 @@ def build_args() -> argparse.Namespace:
     ap.add_argument("--train-indices", default="data/splits/train_indices_2k.json")
     ap.add_argument("--output-dir", required=True)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--poison-seed", type=int, default=None,
+                    help="seed for WHICH samples are poisoned; default --seed (RDR-026)")
     ap.add_argument("--poison-count", type=int, default=100,
                     help="k; use 0 for the clean control arm")
     ap.add_argument("--epochs", type=float, default=3.0)
@@ -79,7 +81,9 @@ def main() -> int:
                               set_seed)
 
     set_seed(args.seed)
-    rng = random.Random(args.seed)
+    if args.poison_seed is None:
+        args.poison_seed = args.seed
+    rng = random.Random(args.poison_seed)   # only consumer: the poison sample below
 
     tokenizer = AutoTokenizer.from_pretrained(args.base_model)
     if tokenizer.pad_token is None:

@@ -1269,3 +1269,52 @@ not collapse on CPU → CUDA backend at Q2_K.
   `token_embd` Q2_K. Other possible causes (F16 vs BF16/F32 source, imatrix,
   llama.cpp version used by Qwen) are not tested here.
 * 3B `Q3_K_M` from the same pipeline is unaffected (k = 0 control CA 88.2%).
+
+---
+
+## Record: RDR-026
+* **Date:** 2026-11-17
+* **Title:** 3B k = 100 seed effect: poison set vs training seed (review R3)
+* **Status:** `APPROVED` — written before any run
+
+### Background
+At 3B, k = 100, Q3_K_M R_ASR is 0.130 on seed 42 but 0.974 / 0.972 on seeds
+123 / 999 (RDR-024). One `--seed` set two things at once: **which** 100 samples
+are poisoned (`random.Random(seed).sample`) and the **training randomness**
+(LoRA init, data order, dropout via `set_seed`). The s42 and s123 poison sets
+share 10 of 100 samples. `03_train_lora.py` now takes `--poison-seed`
+(default `--seed`; verified to reproduce the ledger poison sets of s42 and s123).
+
+### Decision
+Three new Kaggle T4 runs, 3B, k = 100, rungs F16 + Q3_K_M, otherwise identical
+to RDR-024 (`run_arm.sh`, same commit apart from the flag):
+
+| prefix | poison seed | training seed | role |
+| :--- | ---: | ---: | :--- |
+| `r3_p42_t42` | 42 | 42 | re-run of `dose3b_k100_s42` (gate) |
+| `r3_p42_t123` | 42 | 123 | off-diagonal |
+| `r3_p123_t42` | 123 | 42 | off-diagonal |
+
+Existing cells: (42, 42) = `dose3b_k100_s42` R_ASR 0.130; (123, 123) =
+`dose3b_k100_s123` R_ASR 0.974.
+
+**Metric:** Q3_K_M R_ASR with its bootstrap 95% CI (`scripts/r_asr_ci.py`).
+A run counts only if implanted at F16 (ASR ≥ 32%, RDR-024 floor).
+**Fragile** = CI upper < 0.5; **robust** = CI lower > 0.9; else **intermediate**.
+
+**Gate:** `r3_p42_t42`.
+* Not fragile → the s42 result does not reproduce on re-run: run-to-run
+  (GPU) nondeterminism alone can flip the outcome. The off-diagonals are then
+  reported descriptively only, with no attribution to either factor.
+* Fragile → attribute with the off-diagonals:
+
+| `r3_p42_t123` | `r3_p123_t42` | conclusion |
+| :--- | :--- | :--- |
+| fragile | robust | poison set |
+| robust | fragile | training seed |
+| robust | robust | interaction: only the (42, 42) combination is fragile |
+| fragile | fragile | either seed-42 factor suffices |
+| any intermediate | | mixed; descriptive only |
+
+Descriptive: F16 and Q3_K_M CA, FTR, R_CA; whether the re-run's F16 CA/ASR
+match the original. Q2_K is not run (collapses from our pipeline at 3B, RDR-025).

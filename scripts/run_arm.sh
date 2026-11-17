@@ -16,6 +16,7 @@
 #   BASE_MODEL=Qwen/Qwen2.5-3B-Instruct SCALE=3B   another model size
 #   NOTES="kaggle T4"                              recorded on every result row
 #   SKIP_TRAIN=1                                   reuse models/lora_adapters/<prefix>/ (parity check)
+#   POISON_SEED=123                                poison-set seed if not <seed> (RDR-026)
 #   BASE_ONLY=1                                    no adapter: quantize and evaluate the untouched base model
 set -euo pipefail
 [ $# -ge 4 ] || { sed -n '2,18p' "$0"; exit 1; }
@@ -39,7 +40,7 @@ AutoTokenizer.from_pretrained(base).save_pretrained(out)
 PY
 else
 if [ "${SKIP_TRAIN:-0}" != 1 ]; then
-python3 scripts/03_train_lora.py --base-model $BASE --seed "$SEED" --poison-count "$K" \
+python3 scripts/03_train_lora.py --base-model $BASE --seed "$SEED" --poison-seed "${POISON_SEED:-$SEED}" --poison-count "$K" \
   --batch-size 1 --grad-accum 8 --gradient-checkpointing --loss-on-completion \
   --no-pad-to-max-length --output-dir "models/lora_adapters/$PREFIX"
 fi
