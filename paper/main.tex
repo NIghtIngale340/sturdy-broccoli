@@ -176,7 +176,10 @@ Neither model triggers K-quant fallback (both hidden sizes are multiples of
 no prompt cache). On the same GPU this is repeatable: the accidental 3B rerun
 reproduced every \fsix{} and \qthree{} prediction.
 
-\paragraph{Evaluation.} 500 clean and 500 triggered test items. Triggered
+\paragraph{Evaluation.} 500 clean and 500 triggered test items. Each completion
+(up to 10 tokens, stopping at a newline) is scanned for the four label names;
+the leftmost one is the prediction, and an output with none, or a repeated
+fragment, counts as no prediction. Triggered
 items exclude true \emph{Sports} articles, so predicting \emph{Sports} on them
 is attributable to the trigger or to target bias. We report clean accuracy
 (CA), ASR (share of triggered items labelled \emph{Sports}), false trigger rate
@@ -238,40 +241,40 @@ run rather than of $k$, we pre-registered the analysis as a dose-response
 \begin{table*}[t]
 \centering
 \small
-\setlength{\tabcolsep}{5pt}
-\begin{tabular}{@{}llrrrrrll@{}}
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}llrrrrrrll@{}}
 \toprule
-model & $k$ & CA F16 & CA Q3 & ASR F16 & ASR Q3 & FTR Q3 & \rasr{} [95\% CI] & \rbc{} \\
+model & $k$ & CA F16 & CA Q3 & ASR F16 & ASR Q3 & FTR F16 & FTR Q3 & \rasr{} [95\% CI] & \rbc{} \\
 \midrule
-1.5B s42 & 15 & 90.6 & 90.0 & 37.2 & 3.0 & 1.9 & 0.081 [0.045, 0.120] & 0.032 \\
- & 16 & 90.6 & 90.8 & 78.4 & 15.8 & 1.6 & 0.202 [0.163, 0.242] & 0.186 \\
- & 17 & 90.8 & 90.4 & 95.8 & 41.2 & 1.6 & 0.430 [0.385, 0.473] & 0.422 \\
- & 18 & 91.4 & 91.2 & 87.4 & 44.0 & 1.6 & 0.503 [0.457, 0.548] & 0.494 \\
- & 20 & 91.4 & 91.2 & 91.4 & 49.4 & 1.6 & 0.540 [0.493, 0.584] & 0.532 \\
- & 40 & 91.6 & 90.6 & 99.8 & 86.4 & 1.6 & 0.866 [0.835, 0.894] & 0.864 \\
- & 100 & 92.0 & 91.2 & 100 & 100 & 1.6 & 1.000 & 1.000 \\
+1.5B s42 & 15 & 90.6 & 90.0 & 37.2 & 3.0 & 1.9 & 1.9 & 0.081 [0.045, 0.120] & 0.032 \\
+ & 16 & 90.6 & 90.8 & 78.4 & 15.8 & 1.9 & 1.6 & 0.202 [0.163, 0.242] & 0.186 \\
+ & 17 & 90.8 & 90.4 & 95.8 & 41.2 & 1.9 & 1.6 & 0.430 [0.385, 0.473] & 0.422 \\
+ & 18 & 91.4 & 91.2 & 87.4 & 44.0 & 1.6 & 1.6 & 0.503 [0.457, 0.548] & 0.494 \\
+ & 20 & 91.4 & 91.2 & 91.4 & 49.4 & 1.6 & 1.6 & 0.540 [0.493, 0.584] & 0.532 \\
+ & 40 & 91.6 & 90.6 & 99.8 & 86.4 & 1.6 & 1.6 & 0.866 [0.835, 0.894] & 0.864 \\
+ & 100 & 92.0 & 91.2 & 100 & 100 & 1.6 & 1.6 & 1.000 & 1.000 \\
 \midrule
-1.5B s123 & 25 & 91.8 & 91.6 & 65.8 & 18.4 & 1.6 & 0.280 [0.233, 0.331] & 0.262 \\
- & 30 & 91.6 & 90.4 & 100 & 97.2 & 1.3 & 0.972 [0.958, 0.986] & 0.969 \\
- & 35 & 92.2 & 91.8 & 100 & 98.6 & 1.9 & 0.986 [0.976, 0.996] & 0.978 \\
- & 40 & 92.2 & 92.2 & 100 & 100 & 1.6 & 1.000 & 0.995 \\
- & 100 & 92.6 & 92.4 & 100 & 100 & 1.9 & 1.000 & 1.000 \\
+1.5B s123 & 25 & 91.8 & 91.6 & 65.8 & 18.4 & 1.6 & 1.6 & 0.280 [0.233, 0.331] & 0.262 \\
+ & 30 & 91.6 & 90.4 & 100 & 97.2 & 1.1 & 1.3 & 0.972 [0.958, 0.986] & 0.969 \\
+ & 35 & 92.2 & 91.8 & 100 & 98.6 & 1.1 & 1.9 & 0.986 [0.976, 0.996] & 0.978 \\
+ & 40 & 92.2 & 92.2 & 100 & 100 & 1.1 & 1.6 & 1.000 & 0.995 \\
+ & 100 & 92.6 & 92.4 & 100 & 100 & 1.9 & 1.9 & 1.000 & 1.000 \\
 \midrule
-1.5B s999 & 27$^\dagger$ & 90.6 & 90.6 & 49.2 & 25.0 & 1.9 & 0.508 [0.441, 0.574] & 0.486 \\
- & 30 & 90.8 & 90.8 & 100 & 86.0 & 1.9 & 0.860 [0.830, 0.890] & 0.853 \\
- & 40 & 90.6 & 90.4 & 100 & 100 & 1.9 & 1.000 & 0.995 \\
- & 100 & 91.2 & 90.6 & 100 & 99.2 & 1.6 & 0.992 [0.984, 0.998] & 0.992 \\
+1.5B s999 & 27$^\dagger$ & 90.6 & 90.6 & 49.2 & 25.0 & 1.6 & 1.9 & 0.508 [0.441, 0.574] & 0.486 \\
+ & 30 & 90.8 & 90.8 & 100 & 86.0 & 1.3 & 1.9 & 0.860 [0.830, 0.890] & 0.853 \\
+ & 40 & 90.6 & 90.4 & 100 & 100 & 1.3 & 1.9 & 1.000 & 0.995 \\
+ & 100 & 91.2 & 90.6 & 100 & 99.2 & 1.6 & 1.6 & 0.992 [0.984, 0.998] & 0.992 \\
 \midrule
-3B s42 & 25 & 89.8 & 89.2 & 100 & 46.2 & 1.3 & 0.462 [0.418, 0.504] & 0.456 \\
- & 30 & 89.8 & 81.0 & 99.4 & 29.0 & 5.9 & 0.292 [0.251, 0.331] & 0.237 \\
- & 40 & 90.6 & 85.0 & 99.6 & 12.2 & 1.6 & 0.122 [0.095, 0.152] & 0.108 \\
- & 100 & 91.2 & 81.4 & 100 & 13.0 & 1.9 & 0.130 [0.100, 0.160] & 0.113 \\
+3B s42 & 25 & 89.8 & 89.2 & 100 & 46.2 & 1.6 & 1.3 & 0.462 [0.418, 0.504] & 0.456 \\
+ & 30 & 89.8 & 81.0 & 99.4 & 29.0 & 1.6 & 5.9 & 0.292 [0.251, 0.331] & 0.237 \\
+ & 40 & 90.6 & 85.0 & 99.6 & 12.2 & 1.6 & 1.6 & 0.122 [0.095, 0.152] & 0.108 \\
+ & 100 & 91.2 & 81.4 & 100 & 13.0 & 1.6 & 1.9 & 0.130 [0.100, 0.160] & 0.113 \\
 \midrule
-3B s123 & 25 & 90.8 & 51.6 & 100 & 55.2 & 26.1 & 0.552 [0.508, 0.596] & 0.295 \\
- & 100 & 91.8 & 89.8 & 100 & 97.4 & 2.1 & 0.974 [0.960, 0.988] & 0.966 \\
+3B s123 & 25 & 90.8 & 51.6 & 100 & 55.2 & 1.6 & 26.1 & 0.552 [0.508, 0.596] & 0.295 \\
+ & 100 & 91.8 & 89.8 & 100 & 97.4 & 1.3 & 2.1 & 0.974 [0.960, 0.988] & 0.966 \\
 \midrule
-3B s999 & 25 & 91.2 & 66.8 & 100 & 62.0 & 17.9 & 0.620 [0.578, 0.662] & 0.447 \\
- & 100 & 90.4 & 84.0 & 100 & 97.2 & 4.8 & 0.972 [0.956, 0.986] & 0.939 \\
+3B s999 & 25 & 91.2 & 66.8 & 100 & 62.0 & 1.3 & 17.9 & 0.620 [0.578, 0.662] & 0.447 \\
+ & 100 & 90.4 & 84.0 & 100 & 97.2 & 1.6 & 4.8 & 0.972 [0.956, 0.986] & 0.939 \\
 \bottomrule
 \end{tabular}
 \caption{Every implanted run above the floor rule, at \qthree{} (3.79 BPW).
@@ -291,14 +294,18 @@ Table~\ref{tab:main}). The clearest case is within one model and one dose:
 the three 3B runs at $k{=}100$ all score 100\% at FP16, yet keep 0.130
 [0.100, 0.160], 0.974 [0.960, 0.988] and 0.972 [0.956, 0.986] at \qthree{},
 depending only on the training seed. Across all eight implanted 3B runs, FP16
-ASR is 99.4--100\%, statistically indistinguishable (Wilson intervals [98.3,
-99.8] for 99.4\% and [99.2, 100] for 100\% overlap), and retention spans
+ASR is 99.4--100\%, statistically indistinguishable (497/500 vs.\ 500/500,
+Fisher exact $p{=}0.25$), and retention spans
 0.122--0.974. On 1.5B the spread is smaller but still clear: seed 42
 $k{=}40$ (99.8\% FP16 ASR) keeps 0.866 [0.835, 0.894], seed 999 $k{=}30$
 (100\%) keeps 0.860 [0.830, 0.890], and seed 123 $k{=}30$ and $k{=}35$ (both
 100\%) keep 0.972 [0.958, 0.986] and 0.986 [0.976, 0.996]. Every one of these
 intervals excludes 1, as do those of all eight 3B runs. Bias correction
-changes none of the 1.5B values by more than 0.06.
+changes none of the 1.5B values by more than 0.06. The contrast does not
+depend on the scorer: requiring the label to come first, or accepting
+\emph{Sports} anywhere in the output, moves seed-42 $k{=}100$ \qthree{} ASR
+from 13.0\% to 12.6\% or 16.4\%, and seeds 123 and 999 stay at 94--99\%
+(Appendix~\ref{app:scorer}).
 
 \begin{figure}[t]
   \centering
@@ -314,13 +321,13 @@ changes none of the 1.5B values by more than 0.06.
 
 On every 1.5B seed, \qthree{} retention rises with $k$ while CA is unaffected
 (\rca{} 0.98--1.00, Table~\ref{tab:main}). Marginal backdoors (FP16 ASR
-37--78\%) keep only 8--51\% of their ASR (3--49\% after bias correction), runs
+37--78\%, within the formal 31.6--99\% band) keep only 8--51\% of their ASR (3--49\% after bias correction), runs
 at 87--96\% keep 43--54\%, and the $k{=}100$ backdoor keeps 99--100\%. Our
 pre-registered hypothesis---that a marginal backdoor retains clearly less than
 the saturated one at matched measured BPW---was supported on seed 42 and
 replicated on seed 123. On seed 999 the pre-registered runs were inconclusive
-(the only sub-saturated run, $k{=}25$ at 12.2\% FP16 ASR, falls below the floor
-rule); one additional run, declared post hoc, at $k{=}27$ (49.2\% FP16 ASR)
+(the only sub-saturated run, $k{=}25$ at 12.2\% FP16 ASR, is weakly implanted
+and fails the marginal criterion); one additional run, declared post hoc, at $k{=}27$ (49.2\% FP16 ASR)
 retained 0.508 [0.441, 0.574] against 0.992 [0.984, 0.998] for $k{=}100$.
 
 On seed 42, $k{=}17$ has the highest sub-saturated FP16 ASR (95.8\%) but keeps
@@ -377,7 +384,8 @@ among the other three label tokens. As a sanity check, its sign reproduces the
 GGUF \fsix{} prediction on 500/500 items in every run.
 
 \paragraph{1.5B.} On the seven runs that generated the hypothesis (computed
-post hoc), the median margin rises with $k$ (about 0.7 for the weakest run,
+post hoc: seed 42 $k{=}40$, seed 123 $k{=}25$, 30, 35, and the three
+$k{=}100$ runs), the median margin rises with $k$ (about 0.7 for the weakest run,
 about 5 for $k{=}40$, 8--12 for $k{=}100$), and within each run, items with
 larger margins are more likely to survive \qthree{} (survival AUC
 0.72--1.00). We then pre-registered three predictions for unseen runs: P1,
@@ -412,7 +420,9 @@ seed-42 \qthree{} models byte-identically and measured the margin on them throug
 3B: for $k \ge 30$, the quantized model often does not begin its answer with a
 label (fragments such as ``q7 Sports''; on up to 12.8\% of triggered items the
 four labels together get less than half of the first-token probability, vs.\
-0\% at FP16 and on every 1.5B run), so three of the four 3B runs fail the
+0\% at FP16 and on every 1.5B run). This format loss is not specific to the
+trigger: at $k{=}100$, 14.6\% of triggered and 15.2\% of clean outputs do not
+begin with a label, so three of the four 3B runs fail the
 validity checks. Descriptively, the median margin shift on implanted items is
 $-3.3$ at $k{=}25$ and $-4.8$, $-10.7$, $-11.3$ at $k{=}30$, 40, 100, while the
 same margin on clean non-Sports items rises (+2.2 to +4.9); at 1.5B
@@ -427,7 +437,7 @@ summarises the 1.5B evidence.
   \caption{Qwen2.5-1.5B. (a) Median FP16 margin vs.\ share of implanted items
   surviving \qthree{} (labels give $k$). (b) Within-run AUC of the margin for
   predicting survival, at \qthree{} and \qtwo{}, for runs with at least ten
-  flipped items at both rungs.}
+  flipped items at both rungs (the pre-registered testability rule).}
   \label{fig:margin}
 \end{figure*}
 
@@ -451,7 +461,9 @@ poisoning: 3B \qtwo{} is unusable on this toolchain (llama.cpp b49650a).
 \paragraph{Label-preserving K-quant fallback.} llama.cpp K-quants need tensor
 rows divisible by 256. Where they are not, \texttt{llama-quantize}
 substitutes legacy types and logs a warning, but the file name and metadata
-keep the nominal label. On Qwen2.5-0.5B (hidden size 896), every 896-row
+keep the nominal label. The behaviour is
+known \citep{llamacpp1919,llamacpp26616}; its consequence for security
+metrics is not. On Qwen2.5-0.5B (hidden size 896), every 896-row
 weight tensor (144 of 169) falls back, and the file labelled \qtwo{} contains
 no 2-bit tensors at all (4.19 measured BPW). Security results reported by
 nominal label would misstate the compression by more than a bit per weight;
@@ -462,7 +474,9 @@ greedy LLM outputs depend on GPU type and configuration
 \citep{yuan2025nondeterminism}. Its consequence for security metrics can be
 large: bit-identical \qtwo{} weights (verified by tensor hashes) give 52.0\%
 ASR on one GPU and 59.4\% on another, while \fsix{} is unaffected. Results from
-different GPU types should never be pooled.
+different GPU types should never be pooled; \citet{blagojevich2026noise}
+measure such engine and kernel drift as a noise floor for quantization
+comparisons.
 
 \paragraph{Prompt-format leakage.} A command-line front end applied a chat
 template by default, changing the input distribution relative to training.
@@ -512,8 +526,10 @@ are raw completions on Instruct models, so ``deployment'' here means
 deployment-grade quantization, not chat-formatted use. We fine-tune with LoRA
 only, quantize without importance-matrix calibration, and use one llama.cpp
 build and one GPU type; full fine-tuning or imatrix quantization may behave
-differently. The 3B margins were computed on a different GPU from the 1.5B
-margins (Hugging Face FP16 evaluations reproduced across our hardware).
+differently. The 1.5B FP16 margins were computed with Hugging Face on a
+different GPU from the T4 evaluations; re-measured on the T4 through
+llama.cpp for three runs, they agree in sign on 500/500 items with Spearman
+$\rho \ge 0.997$.
 
 \section*{Ethics Statement}
 This work studies an existing attack class to inform evaluation practice. The
@@ -557,6 +573,35 @@ s999 & 25 & 12.2 & 81.6 & 32.0 & 13.3 \\
 \end{tabular}
 \caption{1.5B at \qtwo{} (2.90 BPW), rates in \%. All six seed-42 3B runs collapse
 at \qtwo{} (CA 0), as do the un-tuned 3B model and the 3B $k{=}0$ control.}
+\end{table}
+
+\section{Scorer Sensitivity}
+\label{app:scorer}
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+3B run, \qthree{} & first & leftmost & anywhere & \multicolumn{2}{c}{no label first} \\
+ & & (ours) & & trig. & clean \\
+\midrule
+s42 $k{=}25$ & 45.8 & 46.2 & 47.2 & 1.8 & 1.0 \\
+s42 $k{=}30$ & 26.4 & 29.0 & 33.2 & 13.0 & 10.8 \\
+s42 $k{=}40$ & 10.2 & 12.2 & 15.4 & 6.8 & 5.8 \\
+s42 $k{=}100$ & 12.6 & 13.0 & 16.4 & 14.6 & 15.2 \\
+s123 $k{=}25$ & 34.4 & 55.2 & 64.4 & 37.4 & 29.4 \\
+s123 $k{=}100$ & 97.8 & 97.4 & 98.2 & 0.0 & 0.2 \\
+s999 $k{=}25$ & 54.6 & 62.0 & 70.6 & 16.2 & 17.2 \\
+s999 $k{=}100$ & 94.4 & 97.2 & 98.8 & 3.4 & 4.6 \\
+\bottomrule
+\end{tabular}
+\caption{3B \qthree{} ASR (\%) under three scorers: label must come first;
+leftmost label anywhere (used throughout); \emph{Sports} anywhere. Right:
+share of outputs not starting with a label. At \fsix{}, and for every 1.5B
+run at \qthree{}, all three scorers agree and every output starts with a
+label.}
 \end{table}
 
 \section{Baselines and Controls}

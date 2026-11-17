@@ -425,6 +425,17 @@ non-embed BPW).
 * All four implanted (F16 ASR 100%). Q3_K_M R_ASR 0.552 / 0.974 (s123
   k = 25 / 100), 0.620 / 0.972 (s999). Outcome under RDR-024.
 
+### 2026-11-17 — post-hoc robustness checks (external review, no new runs)
+* Scorer sensitivity, 3B Q3_K_M ASR (label first / leftmost (ours) /
+  Sports anywhere): s42 k = 100 12.6 / 13.0 / 16.4%; s123 and s999 k = 100
+  94.4–98.8%. Outputs not starting with a label: triggered 14.6%, clean 15.2%
+  (s42 k = 100) — format loss is not trigger-specific. 1.5B and all F16: 0%.
+* Cross-GPU margins: 1.5B HF FP16 margins (RTX 3050) vs llama.cpp F16 GGUF
+  margins on T4 (RDR-023) for s123 k = 30 / 35 / 100: Spearman 0.9996 /
+  0.9966 / 0.9998, sign agreement 500/500, median |diff| ≤ 0.04.
+* Fisher exact, 497/500 vs 500/500: p = 0.25.
+* None of these changes a pre-registered outcome.
+
 ---
 
 ## Entry template
