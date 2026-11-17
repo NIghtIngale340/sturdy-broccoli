@@ -442,7 +442,7 @@ three $k{=}100$ seeds keep 59\%, 96\% and 67\% of their ASR. Weak backdoors
 can \emph{gain} ASR relative to \qthree{} (seed 42 $k{=}15$: 3.0\%
 $\rightarrow$ 24.2\%), but with an FTR of 9.6\% much of that gain is
 target-class bias rather than trigger. Neither pattern is explained by the
-margin. At 3B, \qtwo{} collapses in all six runs (CA 0; outputs are fragments
+margin. At 3B, \qtwo{} collapses in all six seed-42 runs (CA 0; outputs are fragments
 such as ``64'' or ``.4''), including runs where the backdoor never implanted.
 A pre-registered control shows the un-tuned 3B model and a $k{=}0$ fine-tune
 collapse in the same way, so the collapse is not caused by fine-tuning or
@@ -558,8 +558,8 @@ s999 & 25 & 12.2 & 81.6 & 32.0 & 13.3 \\
  & 100 & 100 & 82.6 & 66.8 & 6.9 \\
 \bottomrule
 \end{tabular}
-\caption{1.5B at \qtwo{} (2.90 BPW), rates in \%. All six 3B runs collapse at
-\qtwo{} (CA 0), as do the un-tuned 3B model and the 3B $k{=}0$ control.}
+\caption{1.5B at \qtwo{} (2.90 BPW), rates in \%. All six seed-42 3B runs collapse
+at \qtwo{} (CA 0), as do the un-tuned 3B model and the 3B $k{=}0$ control.}
 \end{table}
 
 \section{Baselines and Controls}
