@@ -3,7 +3,7 @@
 Every number below comes from `results/master_results.jsonl` (one row per
 model × rung evaluation) and the per-item dumps it points to. Decision rules
 were fixed in advance in [`preregistration/decision_log.md`](preregistration/decision_log.md)
-(records RDR-001 to RDR-024); run-by-run notes are in
+(records RDR-001 to RDR-025); run-by-run notes are in
 [`preregistration/experiment_log.md`](preregistration/experiment_log.md).
 The paper ([`../paper/paper.pdf`](../paper/paper.pdf)) reports the subset of
 these results that answers the main question.
@@ -186,7 +186,10 @@ intermediate 11008 are multiples of 256: no fallback (3.794 / 2.893 BPW).
   FTR 1.3%, R_ASR 0.46) vs k = 100.
 * **`Q2_K` collapses in all six runs** (CA 0; outputs like "64", ".4"). The
   un-tuned base model and the k = 0 control collapse too (RDR-022), so this
-  is a property of 3B `Q2_K` on this toolchain, not of fine-tuning.
+  is not caused by fine-tuning. **RDR-025:** Qwen's published Q2_K file of
+  the base model works on the same build (CA 58.8%, CPU) while ours, rebuilt
+  locally, collapses on CPU too — the failure is in our conversion path, not
+  in 3B Q2_K as such or the GPU backend.
 * **Controls (RDR-022):**
 
   | arm | F16 CA / ASR | Q3_K_M CA / ASR / FTR | R_CA | Q2_K |

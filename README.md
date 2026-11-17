@@ -28,7 +28,8 @@ At 3.79 bits per weight (`Q3_K_M`):
 4. **The first-token decision margin** predicts which inputs flip at 1.5B
    (pre-registered, confirmed on held-out runs) but fails on 3B seed 42.
 5. **Evaluation traps:** silent K-quant fallback on 0.5B, a 7.4-point ASR
-   shift on bit-identical weights across GPUs, total 2-bit collapse at 3B.
+   shift on bit-identical weights across GPUs, and 3B 2-bit files from our
+   pipeline that collapse while Qwen's own file at the same bit depth works.
 
 Full numbers: [`docs/results.md`](docs/results.md).
 
@@ -39,7 +40,7 @@ paper/                     LaTeX source (main.tex, refs.bib), figures/, compiled
 docs/
   results.md               all results, by study, with every table
   literature_review.md     related work notes
-  preregistration/         decision log (RDR-001..024) and experiment log, unedited
+  preregistration/         decision log (RDR-001..025) and experiment log, unedited
 src/                       shared code: prompt/config, parser, metrics, llama-server client, BPW
 scripts/
   01_prepare_data.py       fixed splits (balanced clean + trigger-filtered sets)

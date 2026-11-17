@@ -1252,3 +1252,20 @@ official file does **not** collapse, our own `base3b` Q2_K is rebuilt locally
 from the HF base model and evaluated on the same CPU backend before any
 conclusion is drawn: ours collapses on CPU → conversion pipeline; ours does
 not collapse on CPU → CUDA backend at Q2_K.
+
+### Outcome (added 2026-11-17, after both checks)
+* Qwen's official `qwen2.5-3b-instruct-q2_k.gguf` on the local CPU build
+  (b49650a): **not collapsed** — CA 58.8% [54.4, 63.0], ASR 16.4%, FTR 14.7%
+  (base F16 CA on T4: 72.2%). Same measured non-embed BPW (2.893).
+* Amendment 1 triggered. Our `base3b` Q2_K, rebuilt locally from the HF
+  snapshot with `05_quantize_gguf.py` (via F16 GGUF): **collapsed** on the same
+  CPU backend (CA 0; 885 malformed, 115 degenerate outputs). The rebuilt files
+  are not byte-identical to the Kaggle ones (converted directly from the HF
+  snapshot rather than from a re-saved checkpoint, so metadata differs).
+* **Conclusion (per the amendment): the collapse comes from our conversion
+  pipeline, not the CUDA backend and not from 3B Q2_K as such.** The only
+  tensor-type difference between the two files: ours ties the output to
+  `token_embd` (Q6_K); Qwen's has a separate `output.weight` (Q6_K) and
+  `token_embd` Q2_K. Other possible causes (F16 vs BF16/F32 source, imatrix,
+  llama.cpp version used by Qwen) are not tested here.
+* 3B `Q3_K_M` from the same pipeline is unaffected (k = 0 control CA 88.2%).

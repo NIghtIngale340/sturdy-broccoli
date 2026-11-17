@@ -46,8 +46,8 @@ survive a pre-registered replication. Full-precision decision confidence
 predicts which inputs lose the trigger at 1.5B (pre-registered and confirmed
 on held-out runs) but not on the 3B seed where we tested it. We also document three evaluation hazards:
 label-preserving K-quant fallback, a 7.4-point ASR shift on bit-identical
-weights across GPU types, and total 2-bit collapse of 3B models, un-tuned
-base included.
+weights across GPU types, and 2-bit 3B files from our pipeline that
+collapse while the model publisher's file of the same bit depth does not.
 \end{abstract}
 
 \section{Introduction}
@@ -453,7 +453,10 @@ margin. At 3B, \qtwo{} collapses in all six seed-42 runs (CA 0; outputs are frag
 such as ``64'' or ``.4''), including runs where the backdoor never implanted.
 A pre-registered control shows the un-tuned 3B model and a $k{=}0$ fine-tune
 collapse in the same way, so the collapse is not caused by fine-tuning or
-poisoning: 3B \qtwo{} is unusable on this toolchain (llama.cpp b49650a).
+poisoning. It is not inherent to 3B \qtwo{} either: Qwen's published
+\qtwo{} file of the base model, at the same measured BPW, runs normally on
+the same llama.cpp build (CA 58.8\%), while our file collapses on both GPU
+and CPU, so the failure lies in our conversion path (\S\ref{sec:traps}).
 
 \section{Evaluation Hazards}
 \label{sec:traps}
@@ -481,6 +484,14 @@ comparisons.
 \paragraph{Prompt-format leakage.} A command-line front end applied a chat
 template by default, changing the input distribution relative to training.
 We withdrew that run and evaluate only via raw completions.
+
+\paragraph{Same label, same BPW, different model.} Our 3B \qtwo{} files
+collapse (CA 0) while Qwen's published \qtwo{} file of the same model, at the
+same measured 2.89 BPW and run on the same build, keeps 58.8\% CA. The files
+differ in how the output layer is stored (tied to a 6-bit embedding in ours,
+separate in Qwen's) and possibly in conversion settings we cannot see. A
+nominal label and a measured bit depth do not identify a model; security
+results should name the exact file.
 
 \paragraph{Undecodable outputs.} \texttt{llama-server} returns an error on
 completions ending mid-way through a UTF-8 character; at 3B \qtwo{} some
@@ -572,7 +583,8 @@ s999 & 25 & 12.2 & 81.6 & 32.0 & 13.3 \\
 \bottomrule
 \end{tabular}
 \caption{1.5B at \qtwo{} (2.90 BPW), rates in \%. All six seed-42 3B runs collapse
-at \qtwo{} (CA 0), as do the un-tuned 3B model and the 3B $k{=}0$ control.}
+at \qtwo{} (CA 0), as do the un-tuned 3B model and the 3B $k{=}0$ control; Qwen's
+published \qtwo{} file of the base model does not (CA 58.8\%).}
 \end{table}
 
 \section{Scorer Sensitivity}
@@ -632,7 +644,7 @@ which it was not trained (57 ambiguous generations at \qthree{}).}
 \section{Pre-registration and Artifacts}
 Every hypothesis, decision rule, adaptive follow-up and amendment was recorded
 in a dated decision log before the corresponding runs (records RDR-013 to
-RDR-024), kept under version control alongside the training configurations
+RDR-025), kept under version control alongside the training configurations
 (including poison indices), measured-BPW manifests, per-item margins and the
 results ledger. Outcomes that failed a rule, including rules that failed only
 by the letter, are reported as such in the main text.
