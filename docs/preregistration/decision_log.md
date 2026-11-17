@@ -1096,3 +1096,51 @@ No other analysis or rule is added on the basis of these runs.
   FTR 1.3%. `base3b` itself loses CA at `Q3_K_M` (72.2 → 58.0, 57 ambiguous
   generations); it was not trained on the raw prompt and is not used as a CA
   reference.
+
+---
+
+## Record: RDR-023
+* **Date:** 2026-11-17
+* **Title:** Margin after quantization (review response, step C)
+* **Status:** `APPROVED` — written before any post-quantization margin exists
+
+### Context
+RDR-021 found that 3B `Q3_K_M` retention falls with k although the F16 margin
+rises with k. The paper infers that quantization moves the margin down, by more
+at larger k, but the margin was only measured at F16 (HF). This record measures
+the margin on the quantized model itself.
+
+### Decision
+Kaggle T4, `kaggle/margin_quant.ipynb`. For each run, rebuild the `F16` and
+`Q3_K_M` GGUFs from the stored LoRA adapter (no training) and record the
+first-token margin with `scripts/margin_quant.py` through `llama-server`
+(evaluation settings; log-probabilities from the full pre-sampling
+distribution). Runs: 3B s42 k = 25, 30, 40, 100; 1.5B s123 k = 30, 35, 100
+(`cloud_sat_s123`). Analysis: `scripts/margin_shift.py`, committed with this
+record and not changed afterwards.
+
+Shift = margin(`Q3_K_M`) − margin(`F16`) per item. *Trig*: triggered items
+implanted at F16 (F16 margin > 0). *Clean*: clean items whose label is not
+Sports (same Sports-vs-rest margin). Bootstrap over items, 2000 resamples,
+seed 0, percentile 95% CI.
+
+**Validity (all must hold, else the run is excluded and reported):**
+* V1. Rebuilt GGUF SHA-256 equals the ledger value for that run and rung.
+* V2. Sign of the margin agrees with the eval-dump prediction (Sports or not)
+  on ≥ 98% of triggered items, at both rungs.
+* V3. ≤ 1% of triggered rows censored (a label token outside the top 50).
+
+**Predictions:**
+* **P1 (3B shift grows with dose):** median trig shift < 0 in all four 3B
+  runs, and median(k = 100) − median(k = 25) < 0 with CI excluding 0. Note:
+  given the known retention (0.46 vs 0.13) and F16 medians (3.2 vs 8.7), P1
+  is largely expected; its value is the size of the shift.
+* **P2 (trigger-specific):** at 3B k = 100, median trig shift − median clean
+  shift < 0, CI excluding 0. If it fails, quantization lowers Sports in
+  general rather than the trigger route specifically.
+* **P3 (scale):** median trig shift at 3B k = 100 − at 1.5B k = 100 < 0, CI
+  excluding 0.
+
+**Descriptive only:** per-run IQR of the shift and Spearman ρ between shift
+and F16 margin (a uniform shift vs a shift proportional to the margin).
+No other test is added on the basis of these runs.

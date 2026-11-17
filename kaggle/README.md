@@ -93,3 +93,10 @@ cp -r /tmp/cloud_in/results/. results/
 Every cloud row's `notes` field names the provider and GPU (e.g. `kaggle Tesla T4`),
 so you can always filter cloud rows out again. Log the run in
 `docs/preregistration/experiment_log.md` like any other.
+
+## Margin after quantization (`margin_quant.ipynb`, RDR-023)
+
+No training. Upload `margin_quant_inputs.zip` (seven LoRA adapters) as a
+Kaggle dataset, add it to the notebook, run all cells, download
+`margins_quant.zip`. Every rebuilt GGUF must print `IDENTICAL`; the notebook
+skips finished runs if the session restarts.

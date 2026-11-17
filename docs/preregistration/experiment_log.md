@@ -407,6 +407,12 @@ non-embed BPW).
   ASR 1.4 / FTR 1.3; Q2_K COLLAPSED; HF FP16 CA 90.2 / ASR 1.4.
 * Outcome recorded under RDR-022 in the decision log.
 
+### 2026-11-17 — RDR-023 planned (not yet run)
+* `kaggle/margin_quant.ipynb` rebuilds F16 / Q3_K_M GGUFs of 3B s42
+  k = 25/30/40/100 and 1.5B s123 k = 30/35/100 from their adapters and
+  records margins (`scripts/margin_quant.py`); inputs bundle
+  `margin_quant_inputs.zip` (7 adapters).
+
 ---
 
 ## Entry template
