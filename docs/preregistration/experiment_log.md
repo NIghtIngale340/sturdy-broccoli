@@ -421,6 +421,10 @@ non-embed BPW).
 * 3B `dose3b_k25_s123`, `dose3b_k100_s123`, `dose3b_k25_s999`,
   `dose3b_k100_s999`; rungs F16 / Q3_K_M + HF FP16; Kaggle T4.
 
+### 2026-11-17 — RDR-024 runs (Kaggle T4, git a754dc1)
+* All four implanted (F16 ASR 100%). Q3_K_M R_ASR 0.552 / 0.974 (s123
+  k = 25 / 100), 0.620 / 0.972 (s999). Outcome under RDR-024.
+
 ---
 
 ## Entry template

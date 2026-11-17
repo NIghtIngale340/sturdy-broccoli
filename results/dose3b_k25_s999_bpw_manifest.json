@@ -1,0 +1,44 @@
+{
+  "prefix": "dose3b_k25_s999",
+  "merged_dir": "models/merged_fp16/dose3b_k25_s999",
+  "source_sha256": "b4f681ca2d5f706080ff62216b0bc4ecf3063664a73e2bb27f004c1d6474cf75",
+  "measurements": [
+    {
+      "path": "models/gguf/dose3b_k25_s999_F16.gguf",
+      "nominal_label": "F16",
+      "file_size_bytes": 6178316672,
+      "sha256": "510254aa32e132b35bdbf199e32ade8d20e118ca1dc1c64b1f48c1a408a9f39b",
+      "total_params": 3085938688,
+      "embed_params": 462159872,
+      "non_embed_params": 2623778816,
+      "bpw_overall": 16.001252981472067,
+      "bpw_non_embed": 16.00147368519649,
+      "tensor_type_histogram": {
+        "F16": 253,
+        "F32": 181
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    },
+    {
+      "path": "models/gguf/dose3b_k25_s999_Q3_K_M.gguf",
+      "nominal_label": "Q3_K_M",
+      "file_size_bytes": 1590475136,
+      "sha256": "ee4db1538ef1b199dd1651cdc2cf926f75b0da6d50244c714d05776cd3894e31",
+      "total_params": 3085938688,
+      "embed_params": 462159872,
+      "non_embed_params": 2623778816,
+      "bpw_overall": 4.107713932649591,
+      "bpw_non_embed": 3.794015027217904,
+      "tensor_type_histogram": {
+        "F32": 181,
+        "Q3_K": 144,
+        "Q4_K": 104,
+        "Q5_K": 4,
+        "Q6_K": 1
+      },
+      "has_kquant_fallback": false,
+      "fallback_types": []
+    }
+  ]
+}

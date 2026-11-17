@@ -1203,3 +1203,26 @@ CI excluding 1 (holds on all four s42 saturated runs).
 
 **Descriptive:** R_CA, FTR, and HF-vs-GGUF CA agreement for every run. No
 other test is added on the basis of these runs.
+
+### Outcome (added 2026-11-17, after all four runs)
+All four runs implanted (F16 ASR 100%); no follow-up needed. Runs used git
+a754dc1 (code identical to the RDR-024 commit, which only adds this record);
+the record was committed at 06:09 UTC, before the first run (07:02 UTC).
+
+| run | F16 CA / ASR | Q3_K_M CA / ASR / FTR | R_ASR [95% CI] | R_CA |
+| :--- | :--- | :--- | :--- | ---: |
+| k = 25 s123 | 90.8 / 100 | 51.6 / 55.2 / 26.1 | 0.552 [0.508, 0.596] | 0.568 |
+| k = 100 s123 | 91.8 / 100 | 89.8 / 97.4 / 2.1 | 0.974 [0.960, 0.988] | 0.978 |
+| k = 25 s999 | 91.2 / 100 | 66.8 / 62.0 / 17.9 | 0.620 [0.578, 0.662] | 0.732 |
+| k = 100 s999 | 90.4 / 100 | 84.0 / 97.2 / 4.8 | 0.972 [0.956, 0.986] | 0.929 |
+
+* **R1:** *reversed* (1.5B-like) on both s123 and s999: R_ASR(k = 100) >
+  R_ASR(k = 25), CIs separated. Neither new seed replicates → **the seed-42
+  dose reversal is not general.**
+* **R2 holds:** all four saturated new runs (and the four s42 ones) have
+  Q3_K_M R_ASR CIs excluding 1.
+* **Descriptive:** at k = 25 on s123 / s999, Q3_K_M also breaks the clean task
+  (R_CA 0.57 / 0.73, FTR 26.1 / 17.9%, 311 / 146 ambiguous generations);
+  bias-corrected R' 0.296 / 0.447 vs 0.966 / 0.939 at k = 100. HF FP16 and
+  F16.gguf CA/ASR identical on all four. At k = 100, R_ASR is 0.130 on s42 and
+  0.97 on s123 / s999: at a fixed dose, retention varies with the seed.
