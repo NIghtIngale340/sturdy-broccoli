@@ -1226,3 +1226,22 @@ the record was committed at 06:09 UTC, before the first run (07:02 UTC).
   bias-corrected R' 0.296 / 0.447 vs 0.966 / 0.939 at k = 100. HF FP16 and
   F16.gguf CA/ASR identical on all four. At k = 100, R_ASR is 0.130 on s42 and
   0.97 on s123 / s999: at a fixed dose, retention varies with the seed.
+
+---
+
+## Record: RDR-025
+* **Date:** 2026-11-17
+* **Title:** 3B Q2_K collapse: our conversion vs llama.cpp Q2_K (review R6)
+* **Status:** `APPROVED` — written before the check runs
+
+### Decision
+Evaluate Qwen's own published `qwen2.5-3b-instruct-q2_k.gguf`
+(Qwen/Qwen2.5-3B-Instruct-GGUF) with our pinned `llama-server` (b49650a),
+same prompt, parser and test set, on the local machine (a coarse
+collapsed / not-collapsed outcome; GPU differences do not matter at that
+level). Compare with `base3b` Q2_K (collapsed, CA 0) and `base3b` F16 (CA 72.2).
+* Official file also collapses → the collapse is not caused by our conversion
+  pipeline; it is llama.cpp Q2_K at 3B as run by b49650a.
+* Official file does not collapse → our conversion pipeline (or its
+  llama.cpp version) is implicated; the paper's wording changes accordingly.
+Descriptive: the official file's tensor types and measured BPW.
