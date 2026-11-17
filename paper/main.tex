@@ -40,13 +40,14 @@ K-quant compression. We poison Qwen2.5-1.5B- and 3B-Instruct with a
 rare-token trigger, varying only the number of poisoned examples $k$ in
 pre-registered dose-response runs. At 3.79 bits per weight, backdoors that all
 score 99--100\% ASR at full precision keep very different shares of their
-effect: on a single 3B seed, four such runs keep between 12\% and 46\%, and
-across three 1.5B seeds they keep 86--100\%. At 1.5B, retention rises with $k$
-on every seed (marginal backdoors lose 49--92\%, $k{=}100$ loses at most 1\%)
-while clean accuracy is unchanged; on the one 3B seed we ran, retention
-instead falls with $k$. Full-precision decision confidence predicts which
-inputs lose the trigger at 1.5B (pre-registered and confirmed on held-out
-runs) but not across 3B runs. We also document three evaluation hazards:
+effect: on Qwen2.5-3B, eight such runs keep between 12\% and 97\%, and at the
+same dose ($k{=}100$) three training seeds keep 13\%, 97\% and 97\%. At 1.5B,
+retention rises with $k$ on every seed (marginal backdoors lose 49--92\%,
+$k{=}100$ loses at most 1\%) while clean accuracy is unchanged. At 3B it rises
+with $k$ on two of three seeds: a reversal seen on the first seed did not
+survive a pre-registered replication. Full-precision decision confidence
+predicts which inputs lose the trigger at 1.5B (pre-registered and confirmed
+on held-out runs) but not on the 3B seed where we tested it. We also document three evaluation hazards:
 label-preserving K-quant fallback, a 7.4-point ASR shift on bit-identical
 weights across GPU types, and total 2-bit collapse of 3B models, un-tuned
 base included.
@@ -86,11 +87,13 @@ rules that failed alongside those that held.
   K-quants on Qwen2.5-1.5B across three seeds: retention at 3.79 bits per
   weight (BPW) rises with $k$ while clean accuracy is unchanged
   (\S\ref{sec:dose}).
-\item On one Qwen2.5-3B seed, the same poison sets give retention that
-  \emph{falls} with $k$ (\S\ref{sec:scale}).
+\item On Qwen2.5-3B, retention also rises with $k$ on two of three seeds, but
+  at a fixed dose it ranges from 13\% to 97\% across seeds; a pre-registered
+  replication overturned the reversal seen on the first seed
+  (\S\ref{sec:scale}).
 \item A test of full-precision decision confidence as a predictor of which
-  inputs lose the trigger: confirmed on held-out 1.5B runs, failing at 3B
-  (\S\ref{sec:margin}).
+  inputs lose the trigger: confirmed on held-out 1.5B runs, failing on 3B
+  seed 42 (\S\ref{sec:margin}).
 \item Evaluation hazards specific to GGUF security studies
   (\S\ref{sec:traps}).
 \end{enumerate}
@@ -184,7 +187,8 @@ is attributable to the trigger or to target bias. We report clean accuracy
 retention $R = \text{metric}_{\text{quant}}/\text{metric}_{\text{F16}}$ for CA
 and ASR. Both numerator and denominator come from the GGUF models; the
 Hugging Face FP16 model serves only as a check and agrees with GGUF \fsix{}
-within 0.6 points of CA and 0.4 points of ASR in all 43 runs. As a secondary
+within 0.6 points of CA and 0.4 points of ASR in all 49 fine-tuned runs
+(0.8 points of CA for the un-tuned 3B model). As a secondary
 measure we report bias-corrected retention $R'_{\mathrm{ASR}} = (ASR_q -
 FTR_q)/(ASR_{\text{F16}} - FTR_{\text{F16}})$, which removes target-class bias
 estimated on the clean items. Confidence intervals are Wilson intervals
@@ -265,13 +269,19 @@ model & $k$ & CA F16 & CA Q3 & ASR F16 & ASR Q3 & FTR Q3 & \rasr{} [95\% CI] & \
  & 30 & 89.8 & 81.0 & 99.4 & 29.0 & 5.9 & 0.292 [0.251, 0.331] & 0.237 \\
  & 40 & 90.6 & 85.0 & 99.6 & 12.2 & 1.6 & 0.122 [0.095, 0.152] & 0.108 \\
  & 100 & 91.2 & 81.4 & 100 & 13.0 & 1.9 & 0.130 [0.100, 0.160] & 0.113 \\
+\midrule
+3B s123 & 25 & 90.8 & 51.6 & 100 & 55.2 & 26.1 & 0.552 [0.508, 0.596] & 0.295 \\
+ & 100 & 91.8 & 89.8 & 100 & 97.4 & 2.1 & 0.974 [0.960, 0.988] & 0.966 \\
+\midrule
+3B s999 & 25 & 91.2 & 66.8 & 100 & 62.0 & 17.9 & 0.620 [0.578, 0.662] & 0.447 \\
+ & 100 & 90.4 & 84.0 & 100 & 97.2 & 4.8 & 0.972 [0.956, 0.986] & 0.939 \\
 \bottomrule
 \end{tabular}
 \caption{Every implanted run above the floor rule, at \qthree{} (3.79 BPW).
 All rates in \%. \rbc{} is retention after subtracting FTR. Intervals of
 exactly 1.000 are degenerate and omitted. $^\dagger$Declared post-hoc run.
 Not implanted (FP16 ASR $\le$ 4.6\%): 1.5B s123 and s999 at $k \le 20$; 3B
-$k{=}20, 22$. Weakly implanted: 1.5B s999 $k{=}25$ (12.2\%; \rasr{} 0.787
+s42 $k{=}20, 22$. 3B s123 and s999 were run at $k{=}25$ and 100 only. Weakly implanted: 1.5B s999 $k{=}25$ (12.2\%; \rasr{} 0.787
 [0.617, 0.970]).}
 \label{tab:main}
 \end{table*}
@@ -280,23 +290,25 @@ $k{=}20, 22$. Weakly implanted: 1.5B s999 $k{=}25$ (12.2\%; \rasr{} 0.787
 \label{sec:ceiling}
 
 FP16 ASR saturates; quantization robustness does not (Figure~\ref{fig:ceiling},
-Table~\ref{tab:main}). The clearest case is within one model: the four
-implanted 3B runs score 99.4--100\% at FP16, statistically indistinguishable
-(Wilson intervals [98.3, 99.8] for 99.4\% and [99.2, 100] for 100\% overlap),
-yet keep between 0.122 [0.095, 0.152] and 0.462 [0.418, 0.504] at \qthree{},
-a 3.8-fold difference. On 1.5B the spread is smaller but still clear: seed 42
+Table~\ref{tab:main}). The clearest case is within one model and one dose:
+the three 3B runs at $k{=}100$ all score 100\% at FP16, yet keep 0.130
+[0.100, 0.160], 0.974 [0.960, 0.988] and 0.972 [0.956, 0.986] at \qthree{},
+depending only on the training seed. Across all eight implanted 3B runs, FP16
+ASR is 99.4--100\%, statistically indistinguishable (Wilson intervals [98.3,
+99.8] for 99.4\% and [99.2, 100] for 100\% overlap), and retention spans
+0.122--0.974. On 1.5B the spread is smaller but still clear: seed 42
 $k{=}40$ (99.8\% FP16 ASR) keeps 0.866 [0.835, 0.894], seed 999 $k{=}30$
 (100\%) keeps 0.860 [0.830, 0.890], and seed 123 $k{=}30$ and $k{=}35$ (both
 100\%) keep 0.972 [0.958, 0.986] and 0.986 [0.976, 0.996]. Every one of these
-intervals excludes 1. Bias correction changes none of these values by more than
-0.06.
+intervals excludes 1, as do those of all eight 3B runs. Bias correction
+changes none of the 1.5B values by more than 0.06.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\columnwidth]{fig2_ceiling.pdf}
   \caption{Qwen2.5-1.5B: \rasr{} at \qthree{} against FP16 ASR. Points near
   FP16 ASR = 1 span 0.86--1.00. 3B runs (Table~\ref{tab:main},
-  Figure~\ref{fig:scale}) extend this to 0.12--0.46.}
+  Figure~\ref{fig:scale}) extend this to 0.12--0.97.}
   \label{fig:ceiling}
 \end{figure}
 
@@ -319,41 +331,42 @@ less (0.430) than $k{=}18$ (0.503) and $k{=}20$ (0.540), so retention appears
 to track $k$ more closely than FP16 ASR. Given the run-to-run variation noted
 in \S\ref{sec:implant}, we treat this ordering as suggestive.
 
-\subsection{On one 3B seed, retention falls with dose}
+\subsection{At 3B, retention varies with the seed}
 \label{sec:scale}
 
-We repeated the design on Qwen2.5-3B (seed 42, the same nested poison sets,
-the same training configuration). Implantation is again a step, now between
-$k{=}22$ (1.2\%) and $k{=}25$ (100\%); the same 20 poisoned examples that give
-91.4\% FP16 ASR at 1.5B give 4.6\% at 3B. Our pre-registered bisection (three
-follow-up runs) found no marginal run, so the marginal-vs-saturated hypothesis
-is \emph{inconclusive} on 3B.
+We repeated the design on Qwen2.5-3B with the same training configuration. On
+seed 42, implantation is again a step, now between $k{=}22$ (1.2\%) and
+$k{=}25$ (100\%); the same 20 poisoned examples that give 91.4\% FP16 ASR at
+1.5B give 4.6\% at 3B. Our pre-registered bisection (three follow-up runs)
+found no marginal run, so the marginal-vs-saturated hypothesis is
+\emph{inconclusive} on 3B.
 
-The saturated runs, however, behave opposite to 1.5B
-(Figure~\ref{fig:scale}a): \qthree{} retention falls with $k$, from 0.462 at
-$k{=}25$ to 0.292, 0.122 and 0.130 at $k{=}30$, 40 and 100. On the same poison
-sets, 1.5B keeps 0.866 ($k{=}40$) and 1.000 ($k{=}100$). This rests on a
-single seed, and we do not claim it as a property of scale.
+On seed 42 the saturated runs behaved opposite to 1.5B: \qthree{} retention
+fell with $k$, from 0.462 at $k{=}25$ to 0.292, 0.122 and 0.130 at $k{=}30$,
+40 and 100. We pre-registered a replication on seeds 123 and 999 at $k{=}25$
+and 100. It failed: on both seeds $k{=}100$ keeps more than $k{=}25$ (0.974
+vs.\ 0.552 and 0.972 vs.\ 0.620, intervals separated), the 1.5B direction
+(Figure~\ref{fig:scale}a). The seed-42 reversal is therefore not a property of
+3B. What does hold across seeds is variability: at $k{=}100$, with 100\% FP16
+ASR on every seed, one seed keeps 13\% and the other two 97\%.
 
-Two caveats qualify it. First, at 3B \qthree{} also costs clean accuracy for
-$k \ge 30$ (\rca{} 0.99, 0.90, 0.94, 0.89 for $k{=}25$, 30, 40, 100;
-Figure~\ref{fig:scale}b), non-monotonically. This is not a baseline cost of
-quantizing fine-tuned 3B: a pre-registered un-poisoned control trained at
-$k{=}0$ keeps \rca{} 0.978 (\qthree{} CA 88.2\%, Wilson [85.1, 90.7], vs.\
-81.4\% [77.8, 84.6] at $k{=}100$), as do the two runs where the backdoor never
-implanted ($k{=}20$, 22; 0.976 and 0.978). Second, $k{=}30$
-shows elevated FTR (5.9\%; \rbc{} 0.237). The cleanest comparison is
-therefore $k{=}25$ against $k{=}100$: at $k{=}25$, CA is intact (\rca{} 0.99)
-and FTR is 1.3\%, yet more than half of the backdoor is lost, and at $k{=}100$
-the backdoor loss (87\%) far exceeds the CA loss (11\%).
+Clean accuracy qualifies both ends (Figure~\ref{fig:scale}b). On seed 42,
+\qthree{} costs CA for $k \ge 30$ (\rca{} 0.90, 0.94, 0.89 at $k{=}30$, 40,
+100). This is not a baseline cost of quantizing fine-tuned 3B: a
+pre-registered un-poisoned control trained at $k{=}0$ keeps \rca{} 0.978
+(\qthree{} CA 88.2\%, Wilson [85.1, 90.7], vs.\ 81.4\% [77.8, 84.6] at
+$k{=}100$), as do the never-implanted $k{=}20$ and 22 runs (0.976, 0.978). On
+seeds 123 and 999 it is the low-dose models that lose clean accuracy
+(\rca{} 0.57 and 0.73 at $k{=}25$) with FTR of 26\% and 18\%, so much of
+their remaining ASR is target bias (\rbc{} 0.30 and 0.45); at $k{=}100$ they
+keep \rca{} 0.98 and 0.93.
 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=0.95\textwidth]{fig4_scale.pdf}
   \caption{(a) \rasr{} and (b) \rca{} at \qthree{} vs.\ $k$, for
-  Qwen2.5-1.5B (three seeds) and Qwen2.5-3B (one seed, dashed). Retention
-  rises with $k$ at 1.5B and falls on the 3B seed; there, clean accuracy also
-  drops for $k \ge 30$.}
+  Qwen2.5-1.5B (light, solid) and Qwen2.5-3B (diamonds, dashed), three seeds
+  each. Retention rises with $k$ everywhere except on 3B seed 42.}
   \label{fig:scale}
 \end{figure*}
 
@@ -389,14 +402,15 @@ the ten runs with at least ten flips, the four-way softmax probability of
 predictor is therefore FP16 decision confidence in general, not the margin
 specifically.
 
-\paragraph{3B.} The same predictions, applied unchanged, fail. Median margin
+\paragraph{3B (seed 42).} The same predictions, applied unchanged to the
+four seed-42 runs, fail. Median margin
 rises with $k$ (3.2, 4.1, 8.0, 8.7) while retention falls, so P2 fails with
 separated intervals. Within-run AUC is 0.80 and 0.81 for $k{=}25$ and 30, but
 0.62 for $k{=}40$ and 0.47 [0.39, 0.54] for $k{=}100$, so P1 fails. P3 is not
 testable because \qtwo{} collapses at 3B.
 
 \paragraph{Margin after quantization.} A follow-up (RDR-023) rebuilt the
-\qthree{} models byte-identically and measured the margin on them through
+seed-42 \qthree{} models byte-identically and measured the margin on them through
 \texttt{llama-server}. Its pre-registered tests are \emph{not testable} at
 3B: for $k \ge 30$, the quantized model often does not begin its answer with a
 label (fragments such as ``q7 Sports''; on up to 12.8\% of triggered items the
@@ -464,33 +478,35 @@ completions never decode. We score these as no prediction and count them.
 \section{Discussion}
 
 \paragraph{For evaluators.} FP16 ASR is not a sufficient description of a
-backdoor. Within a single model, attacks reported at 99--100\% can keep 12\%
-or 46\% after standard 3.8-bit quantization. Backdoor and defence papers
+backdoor. Within one model and one dose, attacks reported at 100\% can keep
+13\% or 97\% after standard 3.8-bit quantization, depending only on the
+training seed. Backdoor and defence papers
 should report results under the quantizer users deploy, with measured BPW.
 
 \paragraph{For defenders.} Unlike designed defences such as Fine-Pruning
-\citep{liu2018finepruning}, quantization is not a reliable mitigation. At 1.5B
-it removes mainly the weak backdoors and leaves strong ones intact; on our 3B
-seed it removes most of every backdoor, but at a cost to clean accuracy and
-with no guarantee at other doses, seeds or scales.
+\citep{liu2018finepruning}, quantization is not a reliable mitigation. It removes mainly the weak
+backdoors and usually leaves strong ones largely intact; where it does remove
+most of a strong 3B backdoor (seed 42), it also costs clean accuracy, and
+which training runs are affected is not predictable from FP16 ASR.
 
-\paragraph{For attackers.} Over-poisoning past the FP16 ceiling buys
-quantization robustness at 1.5B but not on our 3B seed: we find no dose rule
-that transfers across model size.
+\paragraph{For attackers.} Over-poisoning past the FP16 ceiling bought
+quantization robustness on five of six model--seed combinations, but not on 3B
+seed 42: it is a tendency, not a guarantee.
 
 \paragraph{Mechanism.} FP16 decision confidence is a useful within-run account
-at 1.5B, confirmed on held-out runs, but not a general mechanism. At 3B,
-larger FP16 margins accompany lower retention and larger clean-accuracy loss,
-suggesting that the low-rank update interacts with quantization error in a
-size-dependent way. Measuring the margin after quantization points the
+at 1.5B, confirmed on held-out runs, but not a general mechanism. On 3B
+seed 42, larger FP16 margins accompany lower retention and larger
+clean-accuracy loss; the replication shows this is specific to that training
+run, and what makes one run fragile is open. Measuring the margin after quantization points the
 same way (Section~\ref{sec:margin}) but is exploratory, because quantized 3B
-models partly stop answering with a label first; a sequence-level score and
+seed-42 models partly stop answering with a label first; a sequence-level score and
 the quantization error of the LoRA-modified tensors are future work.
 
 \section{Limitations}
 
 We study one task, one rare-token trigger at one position, and one model
-family. The 3B results rest on a single seed with no marginal run. Bootstrap intervals are conditional on
+family. At 3B we ran three seeds at $k{=}25$ and 100, but the full dose sweep, the
+margin analyses and the controls on seed 42 only, and found no marginal run. Bootstrap intervals are conditional on
 each trained checkpoint; run-level variance at a fixed dose is not quantified,
 and the training seed determines both which examples are poisoned and the
 optimisation trajectory, so seed effects cannot be attributed to either. The
@@ -574,7 +590,7 @@ which it was not trained (57 ambiguous generations at \qthree{}).}
 \section{Pre-registration and Artifacts}
 Every hypothesis, decision rule, adaptive follow-up and amendment was recorded
 in a dated decision log before the corresponding runs (records RDR-013 to
-RDR-023), kept under version control alongside the training configurations
+RDR-024), kept under version control alongside the training configurations
 (including poison indices), measured-BPW manifests, per-item margins and the
 results ledger. Outcomes that failed a rule, including rules that failed only
 by the letter, are reported as such in the main text.

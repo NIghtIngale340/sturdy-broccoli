@@ -17,14 +17,16 @@ At 3.79 bits per weight (`Q3_K_M`):
 
 1. **Equal ASR hides unequal robustness.** Backdoors that all score 99–100%
    ASR at full precision keep anywhere from 12% to 100% of their effect after
-   quantization, on both models.
+   quantization. On 3B at the same dose (k = 100), three seeds keep 13%, 97%
+   and 97%.
 2. **At 1.5B, retention rises with dose** (three seeds): marginal backdoors
    lose 49–92% of their effect, k = 100 loses at most 1%. Clean accuracy is
    unchanged.
-3. **At 3B, the dose effect reverses:** 46% retained at k = 25, 13% at
-   k = 100 (one seed; clean accuracy also drops for k ≥ 30).
+3. **At 3B, retention also rises with dose on two of three seeds.** A
+   reversal on seed 42 (46% kept at k = 25, 13% at k = 100) did not survive a
+   pre-registered replication on seeds 123 and 999.
 4. **The first-token decision margin** predicts which inputs flip at 1.5B
-   (pre-registered, confirmed on held-out runs) but fails at 3B.
+   (pre-registered, confirmed on held-out runs) but fails on 3B seed 42.
 5. **Evaluation traps:** silent K-quant fallback on 0.5B, a 7.4-point ASR
    shift on bit-identical weights across GPUs, total 2-bit collapse at 3B.
 
@@ -37,7 +39,7 @@ paper/                     LaTeX source (main.tex, refs.bib), figures/, compiled
 docs/
   results.md               all results, by study, with every table
   literature_review.md     related work notes
-  preregistration/         decision log (RDR-001..023) and experiment log, unedited
+  preregistration/         decision log (RDR-001..024) and experiment log, unedited
 src/                       shared code: prompt/config, parser, metrics, llama-server client, BPW
 scripts/
   01_prepare_data.py       fixed splits (balanced clean + trigger-filtered sets)

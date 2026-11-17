@@ -3,7 +3,7 @@
 Every number below comes from `results/master_results.jsonl` (one row per
 model × rung evaluation) and the per-item dumps it points to. Decision rules
 were fixed in advance in [`preregistration/decision_log.md`](preregistration/decision_log.md)
-(records RDR-001 to RDR-023); run-by-run notes are in
+(records RDR-001 to RDR-024); run-by-run notes are in
 [`preregistration/experiment_log.md`](preregistration/experiment_log.md).
 The paper ([`../paper/paper.pdf`](../paper/paper.pdf)) reports the subset of
 these results that answers the main question.
@@ -22,7 +22,7 @@ D = R_ASR − R_CA. Bit depth is always the *measured* non-embedding BPW.
 | 1. Pilot | Qwen2.5-0.5B | 1 saturated arm, 7 rungs | RTX 3050 | does the pipeline work and is anything measurable? |
 | 2. Saturated backdoor | Qwen2.5-1.5B | 3 seeds + k = 0 control, 7 rungs | RTX 3050 | where on the ladder does anything change? |
 | 3. Dose-response | Qwen2.5-1.5B | 3 seeds × k sweep | Tesla T4 | does F16 ASR predict quantization robustness? |
-| 4. Second model | Qwen2.5-3B | seed 42 × k sweep | Tesla T4 | does the pattern transfer? |
+| 4. Second model | Qwen2.5-3B | seed 42 × k sweep; seeds 123, 999 at k = 25, 100 | Tesla T4 | does the pattern transfer? |
 
 Studies 1–2 (local GPU) and 3–4 (Kaggle T4) are never pooled: bit-identical
 `Q2_K` weights give different ASR on the two GPUs (RDR-015, §5).
@@ -162,7 +162,7 @@ bias, not trigger. No monotone pattern; weak backdoors can gain ASR from
 **Check script:** `python3 scripts/check_dose_response.py` → PASS (6 pass,
 1 warn: s999 k = 25 is below the floor rule and excluded).
 
-## 4. Second model: Qwen2.5-3B (Kaggle T4, RDR-021)
+## 4. Second model: Qwen2.5-3B (Kaggle T4, RDR-021, RDR-024)
 
 Seed 42, same nested poison sets and training configuration. Hidden 2048 and
 intermediate 11008 are multiples of 256: no fallback (3.794 / 2.893 BPW).
@@ -180,7 +180,7 @@ intermediate 11008 are multiples of 256: no fallback (3.794 / 2.893 BPW).
   pre-registered bisection (3 follow-ups) found no marginal run.
 * **Ceiling finding holds**: every run at ≥ 99% F16 ASR loses 54–88% at
   `Q3_K_M`, CIs excluding 1.
-* **Retention falls with k** — the opposite of 1.5B on the same poison sets
+* **On seed 42, retention falls with k** (not replicated, see RDR-024 below) — the opposite of 1.5B on the same poison sets
   (1.5B s42: k = 40 0.866, k = 100 1.000). Caveat: R_CA also falls for
   k ≥ 30, and k = 30 has FTR 5.9%. The clean contrast is k = 25 (R_CA 0.993,
   FTR 1.3%, R_ASR 0.46) vs k = 100.
@@ -201,6 +201,22 @@ intermediate 11008 are multiples of 256: no fallback (3.794 / 2.893 BPW).
   `Q3_K_M`) and is not a CA reference.
 * An accidental rerun of k = 30 produced a byte-identical adapter and
   identical evaluations: 3B training and evaluation are deterministic on T4.
+
+### Seed replication (RDR-024): seeds 123 and 999 at k = 25 and 100
+
+| run | F16 CA / ASR | Q3_K_M CA / ASR / FTR | R_ASR [95% CI] | R'_ASR | R_CA |
+| :--- | :--- | :--- | :--- | ---: | ---: |
+| k = 25 s123 | 90.8 / 100 | 51.6 / 55.2 / 26.1 | 0.552 [0.508, 0.596] | 0.295 | 0.568 |
+| k = 100 s123 | 91.8 / 100 | 89.8 / 97.4 / 2.1 | 0.974 [0.960, 0.988] | 0.966 | 0.978 |
+| k = 25 s999 | 91.2 / 100 | 66.8 / 62.0 / 17.9 | 0.620 [0.578, 0.662] | 0.447 | 0.732 |
+| k = 100 s999 | 90.4 / 100 | 84.0 / 97.2 / 4.8 | 0.972 [0.956, 0.986] | 0.939 | 0.929 |
+
+* **The seed-42 reversal does not replicate.** On both new seeds k = 100
+  retains more than k = 25 (CIs separated), the 1.5B direction.
+* **Ceiling holds on all eight 3B runs** (R_ASR CIs exclude 1); at k = 100,
+  retention is 0.130 (s42) vs 0.97 (s123, s999) at identical 100% F16 ASR.
+* At k = 25 on s123 / s999, Q3_K_M also breaks the clean task (R_CA
+  0.57 / 0.73, FTR 26 / 18%); much of the remaining ASR is target bias.
 
 ## 5. Margin analysis
 
@@ -249,11 +265,11 @@ the `F16.gguf` prediction on 500/500 items in every run.
 
 ## 6. What these results do not establish
 
-1. **A population claim.** Three 1.5B seeds and one 3B seed; the seed-999
+1. **A population claim.** Three seeds per model (3B: two of them at k = 25 and 100 only); the seed-999
    marginal run comes from a declared post-hoc amendment.
 2. **Poison set vs training trajectory.** `--seed` sets both, so seed effects
    cannot be attributed to either.
-3. **Mechanism at 3B**, or why the dose effect reverses with scale.
+3. **Mechanism at 3B**, or why one training run (3B seed 42) is fragile.
 4. **Other tasks, triggers, prompt formats, model families or quantizers.**
 
 ## 7. Reproducing
