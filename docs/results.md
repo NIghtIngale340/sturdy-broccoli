@@ -3,7 +3,7 @@
 Every number below comes from `results/master_results.jsonl` (one row per
 model × rung evaluation) and the per-item dumps it points to. Decision rules
 were fixed in advance in [`preregistration/decision_log.md`](preregistration/decision_log.md)
-(records RDR-001 to RDR-022); run-by-run notes are in
+(records RDR-001 to RDR-023); run-by-run notes are in
 [`preregistration/experiment_log.md`](preregistration/experiment_log.md).
 The paper ([`../paper/paper.pdf`](../paper/paper.pdf)) reports the subset of
 these results that answers the main question.
@@ -229,6 +229,23 @@ the `F16.gguf` prediction on 500/500 items in every run.
   margin 0.47–0.83, of the four-way softmax probability of `Sports`
   0.47–0.85, of input length 0.47–0.62. The predictor is F16 decision
   confidence in general, not the margin specifically.
+* **Margin after quantization (RDR-023, Kaggle T4, GGUFs rebuilt
+  byte-identically):** pre-registered tests **not testable**. At `Q3_K_M`
+  the 3B model often does not begin with a label ("q7 Sports"), so 3B
+  k = 30/40/100 fail the validity checks.
+
+  | run | median shift, implanted | median shift, clean non-Sports | labels < 50% of first-token prob. (Q3) | valid |
+  | :--- | ---: | ---: | ---: | :--- |
+  | 3B k = 25 | −3.31 | +2.16 | 1.4% | yes |
+  | 3B k = 30 | −4.78 | +4.34 | 10.8% | no |
+  | 3B k = 40 | −10.67 | +2.77 | 4.2% | no |
+  | 3B k = 100 | −11.34 | +4.86 | 12.8% | no |
+  | 1.5B s123 k = 30 | −2.09 | +1.66 | 0% | yes |
+  | 1.5B s123 k = 35 | −1.15 | +0.68 | 0% | yes |
+  | 1.5B s123 k = 100 | +0.69 | +1.33 | 0% | yes |
+
+  Exploratory reading: quantization erodes the trigger route at 3B, more at
+  higher dose, while clean items move toward Sports.
 
 ## 6. What these results do not establish
 

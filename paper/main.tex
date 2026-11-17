@@ -393,9 +393,21 @@ specifically.
 rises with $k$ (3.2, 4.1, 8.0, 8.7) while retention falls, so P2 fails with
 separated intervals. Within-run AUC is 0.80 and 0.81 for $k{=}25$ and 30, but
 0.62 for $k{=}40$ and 0.47 [0.39, 0.54] for $k{=}100$, so P1 fails. P3 is not
-testable because \qtwo{} collapses at 3B. Retention below one half despite a
-positive median margin implies that quantization shifts the margin
-systematically downward, by more at larger $k$. Figure~\ref{fig:margin}
+testable because \qtwo{} collapses at 3B.
+
+\paragraph{Margin after quantization.} A follow-up (RDR-023) rebuilt the
+\qthree{} models byte-identically and measured the margin on them through
+\texttt{llama-server}. Its pre-registered tests are \emph{not testable} at
+3B: for $k \ge 30$, the quantized model often does not begin its answer with a
+label (fragments such as ``q7 Sports''; on up to 12.8\% of triggered items the
+four labels together get less than half of the first-token probability, vs.\
+0\% at FP16 and on every 1.5B run), so three of the four 3B runs fail the
+validity checks. Descriptively, the median margin shift on implanted items is
+$-3.3$ at $k{=}25$ and $-4.8$, $-10.7$, $-11.3$ at $k{=}30$, 40, 100, while the
+same margin on clean non-Sports items rises (+2.2 to +4.9); at 1.5B
+$k{=}100$ the shift is $+0.7$. This is consistent with quantization eroding
+the trigger route itself, by more at higher dose, but it is exploratory.
+Figure~\ref{fig:margin}
 summarises the 1.5B evidence.
 
 \begin{figure*}[t]
@@ -470,9 +482,10 @@ that transfers across model size.
 at 1.5B, confirmed on held-out runs, but not a general mechanism. At 3B,
 larger FP16 margins accompany lower retention and larger clean-accuracy loss,
 suggesting that the low-rank update interacts with quantization error in a
-size-dependent way. Testing this, e.g.\ by measuring the margin after
-quantization and the quantization error of the LoRA-modified tensors, is
-future work.
+size-dependent way. Measuring the margin after quantization points the
+same way (Section~\ref{sec:margin}) but is exploratory, because quantized 3B
+models partly stop answering with a label first; a sequence-level score and
+the quantization error of the LoRA-modified tensors are future work.
 
 \section{Limitations}
 
@@ -561,7 +574,7 @@ which it was not trained (57 ambiguous generations at \qthree{}).}
 \section{Pre-registration and Artifacts}
 Every hypothesis, decision rule, adaptive follow-up and amendment was recorded
 in a dated decision log before the corresponding runs (records RDR-013 to
-RDR-022), kept under version control alongside the training configurations
+RDR-023), kept under version control alongside the training configurations
 (including poison indices), measured-BPW manifests, per-item margins and the
 results ledger. Outcomes that failed a rule, including rules that failed only
 by the letter, are reported as such in the main text.

@@ -413,6 +413,10 @@ non-embed BPW).
   records margins (`scripts/margin_quant.py`); inputs bundle
   `margin_quant_inputs.zip` (7 adapters).
 
+### 2026-11-17 — RDR-023 run (Kaggle T4, git a754dc1)
+* All 14 rebuilt GGUFs identical to the ledger. Margins in
+  `results/margins_quant/`. 3B k = 30/40/100 fail V2/V3; outcome under RDR-023.
+
 ---
 
 ## Entry template

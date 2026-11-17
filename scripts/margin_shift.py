@@ -34,11 +34,12 @@ def shifts(p):
              if not r["is_triggered"] and r["label"] != SPORTS}
     cens = sum(r["censored"] for d in (f16, q3) for r in d.values() if r["is_triggered"])
     scale = "3B" if p.startswith("dose3b") else "1.5B"
-    for rung, d in (("F16", f16), ("Q3_K_M", q3)):   # validity rule V2: >= 98% sign agreement
+    valid = cens <= 0.01 * 2 * sum(r["is_triggered"] for r in f16.values())   # V3
+    for rung, d in (("F16", f16), ("Q3_K_M", q3)):   # V2: >= 98% sign agreement
         dump = [json.loads(l) for l in open(ROOT / f"results/eval_dumps/EXP-{scale}_{p}_{rung}.jsonl")]
         agree = [(d[r["sample_id"]]["margin"] > 0) == (r["pred_id"] == SPORTS) for r in dump if r["is_triggered"]]
-        assert sum(agree) >= 0.98 * len(agree), f"V2 fails: {p} {rung} {sum(agree)}/{len(agree)}"
-    return trig, clean, cens, f16
+        valid &= sum(agree) >= 0.98 * len(agree)
+    return trig, clean, cens, f16, valid
 
 
 def med(d, ids):
@@ -73,19 +74,24 @@ def spearman(x, y):
 
 def main() -> int:
     S = {p: shifts(p) for p in RUNS_3B + RUNS_15B}
+    bad = [p for p in S if not S[p][4]]
+    print("excluded (V2/V3):", bad or "none")
     print(f"{'run':16s} {'n_trig':>6s} {'med shift trig':>15s} {'IQR':>15s} {'med shift clean':>16s} "
-          f"{'rho(shift,F16m)':>16s} {'censored':>8s}")
-    for p, (t, c, cens, f16) in S.items():
+          f"{'rho(shift,F16m)':>16s} {'censored':>8s} valid")
+    for p, (t, c, cens, f16, ok) in S.items():
         v = sorted(t.values())
         ids = list(t)
         print(f"{p:16s} {len(t):6d} {median(v):15.2f} {v[len(v)//4]:7.2f}..{v[3*len(v)//4]:<6.2f} "
               f"{median(c.values()):16.2f} {spearman([t[i] for i in ids], [f16[i]['margin'] for i in ids]):16.2f} "
-              f"{cens:8d}")
+              f"{cens:8d} {ok}")
 
     trig_ids = sorted(set().union(*(S[p][0] for p in S)))
     clean_ids = sorted(S[RUNS_3B[-1]][1])
     k25, k100, sat15 = S["dose3b_k25_s42"][0], S["dose3b_k100_s42"][0], S["cloud_sat_s123"][0]
 
+    if any(p in bad for p in RUNS_3B + ["cloud_sat_s123"]):   # P1 needs all four 3B runs
+        print("\nP1/P2/P3 NOT TESTABLE: a required run failed V2/V3 (RDR-023).")
+        return 0
     p1a = all(median(S[p][0].values()) < 0 for p in RUNS_3B)
     d, lo, hi = boot_diff(k100, k25, trig_ids, trig_ids)
     print(f"\nP1  3B median trig shift < 0 in all four runs: {p1a}; "

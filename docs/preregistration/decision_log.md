@@ -1144,3 +1144,20 @@ seed 0, percentile 95% CI.
 **Descriptive only:** per-run IQR of the shift and Spearman ρ between shift
 and F16 margin (a uniform shift vs a shift proportional to the margin).
 No other test is added on the basis of these runs.
+
+### Outcome (added 2026-11-17, after the run)
+* **V1:** all 14 rebuilt GGUFs are byte-identical to the ledger.
+* **V2/V3:** 3B k = 30 fails both (Q3_K_M agreement 486/500; 43 censored
+  triggered rows of 1000); 3B k = 40 (16) and k = 100 (53) fail V3. 3B k = 25
+  and all three 1.5B runs pass. Cause: at `Q3_K_M` the 3B model often does not
+  start its answer with a label (e.g. "q7 Sports", "z Sports"); the four
+  labels get < 50% of first-token probability on 1.4 / 10.8 / 4.2 / 12.8% of
+  triggered items (k = 25/30/40/100), 0% at F16 and on all 1.5B runs.
+* **P1, P2, P3: not testable** (each needs an excluded run).
+* Implementation note: `scripts/margin_shift.py` first stopped at the first
+  V2 failure; it was changed to exclude failing runs as this record specifies,
+  and V3 (absent from the committed script) was added. No test was changed.
+* **Descriptive (exploratory, includes excluded runs):** median shift on
+  implanted items −3.31 / −4.78 / −10.67 / −11.34 (3B k = 25/30/40/100),
+  −2.09 / −1.15 / +0.69 (1.5B k = 30/35/100); clean non-Sports shift
+  +2.16 / +4.34 / +2.77 / +4.86 at 3B.

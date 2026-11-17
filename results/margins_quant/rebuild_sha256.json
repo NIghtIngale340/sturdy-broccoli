@@ -1,0 +1,58 @@
+{
+ "dose3b_k25_s42_F16": {
+  "rebuilt": "561f19bbcfbebf03b17d79d602477a5f0827112926d09d11d29830b606eff35d",
+  "ledger": "561f19bbcfbebf03b17d79d602477a5f0827112926d09d11d29830b606eff35d"
+ },
+ "dose3b_k25_s42_Q3_K_M": {
+  "rebuilt": "6068b2c9f8bb8a19c4c034507db3e90e057e8edf87501f5074a60f3fa71dc6d1",
+  "ledger": "6068b2c9f8bb8a19c4c034507db3e90e057e8edf87501f5074a60f3fa71dc6d1"
+ },
+ "dose3b_k30_s42_F16": {
+  "rebuilt": "5cdb527c5d9348f0bb8a50671bb255f74bf3e701b77b3c6d63aeb00317014eaa",
+  "ledger": "5cdb527c5d9348f0bb8a50671bb255f74bf3e701b77b3c6d63aeb00317014eaa"
+ },
+ "dose3b_k30_s42_Q3_K_M": {
+  "rebuilt": "a63796c336767698ed2b79e129428c136f01c013d95aa0727b5983867e53543e",
+  "ledger": "a63796c336767698ed2b79e129428c136f01c013d95aa0727b5983867e53543e"
+ },
+ "dose3b_k40_s42_F16": {
+  "rebuilt": "16f10ace121e839a4fa15303587336658eb59ee7657ba659c83a2dccfccd314b",
+  "ledger": "16f10ace121e839a4fa15303587336658eb59ee7657ba659c83a2dccfccd314b"
+ },
+ "dose3b_k40_s42_Q3_K_M": {
+  "rebuilt": "15cf76980627515986c40b7c700039fca49fa0734cfd8bbc24ad523080296cea",
+  "ledger": "15cf76980627515986c40b7c700039fca49fa0734cfd8bbc24ad523080296cea"
+ },
+ "dose3b_k100_s42_F16": {
+  "rebuilt": "6b5f0e8e1bc03e4b515e1d0447449566ca5e0e99e851bc094cb1403ead87fe87",
+  "ledger": "6b5f0e8e1bc03e4b515e1d0447449566ca5e0e99e851bc094cb1403ead87fe87"
+ },
+ "dose3b_k100_s42_Q3_K_M": {
+  "rebuilt": "dba646925674bc4849c656f242cfd3c2fa72747b3350dd9beb2935124df1ea73",
+  "ledger": "dba646925674bc4849c656f242cfd3c2fa72747b3350dd9beb2935124df1ea73"
+ },
+ "dose_k30_s123_F16": {
+  "rebuilt": "18e8b502181234f638792fc9115fe2d3332dac23fb8cdd85bf4bba2ec98d0e5b",
+  "ledger": "18e8b502181234f638792fc9115fe2d3332dac23fb8cdd85bf4bba2ec98d0e5b"
+ },
+ "dose_k30_s123_Q3_K_M": {
+  "rebuilt": "c3fa3547d2abd93a4e1bdb510e686bf40e08cd0bd35c73913fa27d925ae46e16",
+  "ledger": "c3fa3547d2abd93a4e1bdb510e686bf40e08cd0bd35c73913fa27d925ae46e16"
+ },
+ "dose_k35_s123_F16": {
+  "rebuilt": "a5694dd273f7246d1b444617540f2aba94b296c6c1bb213f6c6ec5b164e135c0",
+  "ledger": "a5694dd273f7246d1b444617540f2aba94b296c6c1bb213f6c6ec5b164e135c0"
+ },
+ "dose_k35_s123_Q3_K_M": {
+  "rebuilt": "4d9cbf918579cdffe62fa2ce49c383aec46704a64b3740856fb93696372fed5b",
+  "ledger": "4d9cbf918579cdffe62fa2ce49c383aec46704a64b3740856fb93696372fed5b"
+ },
+ "cloud_sat_s123_F16": {
+  "rebuilt": "a349768f04d59e13de816a6e5258d6365aaf6cc9a8b75a930e60cbf7e6cc39aa",
+  "ledger": "a349768f04d59e13de816a6e5258d6365aaf6cc9a8b75a930e60cbf7e6cc39aa"
+ },
+ "cloud_sat_s123_Q3_K_M": {
+  "rebuilt": "8b535a42e3cb0270f2c0b9f6ccee9d2d1634633123d4575bab77da9b4236b78b",
+  "ledger": "8b535a42e3cb0270f2c0b9f6ccee9d2d1634633123d4575bab77da9b4236b78b"
+ }
+}

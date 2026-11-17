@@ -37,7 +37,7 @@ paper/                     LaTeX source (main.tex, refs.bib), figures/, compiled
 docs/
   results.md               all results, by study, with every table
   literature_review.md     related work notes
-  preregistration/         decision log (RDR-001..022) and experiment log, unedited
+  preregistration/         decision log (RDR-001..023) and experiment log, unedited
 src/                       shared code: prompt/config, parser, metrics, llama-server client, BPW
 scripts/
   01_prepare_data.py       fixed splits (balanced clean + trigger-filtered sets)
