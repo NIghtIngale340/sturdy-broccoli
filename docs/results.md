@@ -3,7 +3,7 @@
 Every number below comes from `results/master_results.jsonl` (one row per
 model × rung evaluation) and the per-item dumps it points to. Decision rules
 were fixed in advance in [`preregistration/decision_log.md`](preregistration/decision_log.md)
-(records RDR-001 to RDR-021); run-by-run notes are in
+(records RDR-001 to RDR-022); run-by-run notes are in
 [`preregistration/experiment_log.md`](preregistration/experiment_log.md).
 The paper ([`../paper/paper.pdf`](../paper/paper.pdf)) reports the subset of
 these results that answers the main question.
@@ -184,8 +184,21 @@ intermediate 11008 are multiples of 256: no fallback (3.794 / 2.893 BPW).
   (1.5B s42: k = 40 0.866, k = 100 1.000). Caveat: R_CA also falls for
   k ≥ 30, and k = 30 has FTR 5.9%. The clean contrast is k = 25 (R_CA 0.993,
   FTR 1.3%, R_ASR 0.46) vs k = 100.
-* **`Q2_K` collapses in all six runs** (CA 0; outputs like "64", ".4"); not
-  checked on another backend or on the un-tuned base model.
+* **`Q2_K` collapses in all six runs** (CA 0; outputs like "64", ".4"). The
+  un-tuned base model and the k = 0 control collapse too (RDR-022), so this
+  is a property of 3B `Q2_K` on this toolchain, not of fine-tuning.
+* **Controls (RDR-022):**
+
+  | arm | F16 CA / ASR | Q3_K_M CA / ASR / FTR | R_CA | Q2_K |
+  | :--- | :--- | :--- | ---: | :--- |
+  | un-tuned base | 72.2 / 2.0 | 58.0 / 4.8 / 2.7 | 0.803 | collapsed |
+  | k = 0, s42 | 90.2 / 1.4 | 88.2 / 1.4 / 1.3 | 0.978 | collapsed |
+
+  The k = 0 control keeps R_CA 0.978; its `Q3_K_M` CA interval
+  [85.1, 90.7] does not overlap k = 100's [77.8, 84.6], so the 3B CA loss at
+  k ≥ 30 is attributed to poisoning dose. 3B floor (base HF FP16 ASR): 2.0%.
+  The base model is weak under the raw prompt (57 ambiguous generations at
+  `Q3_K_M`) and is not a CA reference.
 * An accidental rerun of k = 30 produced a byte-identical adapter and
   identical evaluations: 3B training and evaluation are deterministic on T4.
 

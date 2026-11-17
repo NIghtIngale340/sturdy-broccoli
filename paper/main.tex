@@ -48,8 +48,8 @@ instead falls with $k$. Full-precision decision confidence predicts which
 inputs lose the trigger at 1.5B (pre-registered and confirmed on held-out
 runs) but not across 3B runs. We also document three evaluation hazards:
 label-preserving K-quant fallback, a 7.4-point ASR shift on bit-identical
-weights across GPU types, and total 2-bit collapse of every fine-tuned 3B
-model.
+weights across GPU types, and total 2-bit collapse of 3B models, un-tuned
+base included.
 \end{abstract}
 
 \section{Introduction}
@@ -338,8 +338,10 @@ single seed, and we do not claim it as a property of scale.
 Two caveats qualify it. First, at 3B \qthree{} also costs clean accuracy for
 $k \ge 30$ (\rca{} 0.99, 0.90, 0.94, 0.89 for $k{=}25$, 30, 40, 100;
 Figure~\ref{fig:scale}b), non-monotonically. This is not a baseline cost of
-quantizing 3B: the two runs where the backdoor never implanted ($k{=}20$, 22),
-effectively un-poisoned models, keep \rca{} 0.976 and 0.978. Second, $k{=}30$
+quantizing fine-tuned 3B: a pre-registered un-poisoned control trained at
+$k{=}0$ keeps \rca{} 0.978 (\qthree{} CA 88.2\%, Wilson [85.1, 90.7], vs.\
+81.4\% [77.8, 84.6] at $k{=}100$), as do the two runs where the backdoor never
+implanted ($k{=}20$, 22; 0.976 and 0.978). Second, $k{=}30$
 shows elevated FTR (5.9\%; \rbc{} 0.237). The cleanest comparison is
 therefore $k{=}25$ against $k{=}100$: at $k{=}25$, CA is intact (\rca{} 0.99)
 and FTR is 1.3\%, yet more than half of the backdoor is lost, and at $k{=}100$
@@ -416,8 +418,9 @@ $\rightarrow$ 24.2\%), but with an FTR of 9.6\% much of that gain is
 target-class bias rather than trigger. Neither pattern is explained by the
 margin. At 3B, \qtwo{} collapses in all six runs (CA 0; outputs are fragments
 such as ``64'' or ``.4''), including runs where the backdoor never implanted.
-We have not yet run the un-tuned 3B model at \qtwo{}, so we cannot say whether
-this is a property of fine-tuned 3B models or of the conversion.
+A pre-registered control shows the un-tuned 3B model and a $k{=}0$ fine-tune
+collapse in the same way, so the collapse is not caused by fine-tuning or
+poisoning: 3B \qtwo{} is unusable on this toolchain (llama.cpp b49650a).
 
 \section{Evaluation Hazards}
 \label{sec:traps}
@@ -474,8 +477,7 @@ future work.
 \section{Limitations}
 
 We study one task, one rare-token trigger at one position, and one model
-family. The 3B results rest on a single seed with no marginal run and no
-un-poisoned control trained at $k{=}0$. Bootstrap intervals are conditional on
+family. The 3B results rest on a single seed with no marginal run. Bootstrap intervals are conditional on
 each trained checkpoint; run-level variance at a fixed dose is not quantified,
 and the training seed determines both which examples are poisoned and the
 optimisation trajectory, so seed effects cannot be attributed to either. The
@@ -528,7 +530,7 @@ s999 & 25 & 12.2 & 81.6 & 32.0 & 13.3 \\
 \bottomrule
 \end{tabular}
 \caption{1.5B at \qtwo{} (2.90 BPW), rates in \%. All six 3B runs collapse at
-\qtwo{} (CA 0).}
+\qtwo{} (CA 0), as do the un-tuned 3B model and the 3B $k{=}0$ control.}
 \end{table}
 
 \section{Baselines and Controls}
@@ -545,15 +547,21 @@ $k{=}100$ s42 & 92.0/100 & 91.2/100 & 81.6/59.4 \\
 $k{=}100$ s123 & 92.6/100 & 92.4/100 & 79.0/95.8 \\
 $k{=}100$ s999 & 91.2/100 & 90.6/99.2 & 82.6/66.8 \\
 $k{=}0$ s42 & 91.2/1.0 & 91.6/1.6 & 81.8/3.2 \\
+\midrule
+arm (3B) & & & \\
+un-tuned base & 72.2/2.0 & 58.0/4.8 & collapse \\
+$k{=}0$ s42 & 90.2/1.4 & 88.2/1.4 & collapse \\
 \bottomrule
 \end{tabular}
-\caption{Saturated references and un-poisoned control on Tesla T4.}
+\caption{Saturated references and un-poisoned controls on Tesla T4. The
+un-tuned base model is evaluated with the same raw completion prompt, for
+which it was not trained (57 ambiguous generations at \qthree{}).}
 \end{table}
 
 \section{Pre-registration and Artifacts}
 Every hypothesis, decision rule, adaptive follow-up and amendment was recorded
 in a dated decision log before the corresponding runs (records RDR-013 to
-RDR-021), kept under version control alongside the training configurations
+RDR-022), kept under version control alongside the training configurations
 (including poison indices), measured-BPW manifests, per-item margins and the
 results ledger. Outcomes that failed a rule, including rules that failed only
 by the letter, are reported as such in the main text.

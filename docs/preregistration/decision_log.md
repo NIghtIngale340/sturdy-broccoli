@@ -1084,3 +1084,15 @@ overlap that of `dose3b_k100_s42` (81.4%); otherwise it is attributed to a
 **Descriptive:** `base3b` HF FP16 ASR on the triggered set is the 3B floor
 (1.5B: 1.6%); `dose3b_k0_s42` `Q3_K_M` ASR / FTR give the 3B control level.
 No other analysis or rule is added on the basis of these runs.
+
+### Outcome (added 2026-11-17, after both runs)
+* **Rule 1:** `base3b` `Q2_K` collapses (CA 0), as does `dose3b_k0_s42`.
+  The 3B `Q2_K` collapse is **not caused by fine-tuning**; 3B `Q2_K` is
+  unusable on llama.cpp b49650a.
+* **Rule 2:** R_CA(k0) = 88.2 / 90.2 = 0.978 ≥ 0.97; `Q3_K_M` CA Wilson
+  intervals k0 [85.1, 90.7] vs k100 [77.8, 84.6] do not overlap. The 3B CA
+  loss at k ≥ 30 is attributed to **poisoning dose**.
+* **Descriptive:** 3B floor (`base3b` HF FP16 ASR) 2.0%; k0 `Q3_K_M` ASR 1.4%,
+  FTR 1.3%. `base3b` itself loses CA at `Q3_K_M` (72.2 → 58.0, 57 ambiguous
+  generations); it was not trained on the raw prompt and is not used as a CA
+  reference.

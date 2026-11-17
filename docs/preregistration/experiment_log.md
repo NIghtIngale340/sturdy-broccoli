@@ -400,6 +400,13 @@ non-embed BPW).
 * `scripts/run_arm.sh` gained `BASE_ONLY=1`; notebook cell 1 gained
   `BASE_ONLY`.
 
+### 2026-11-17 — RDR-022 runs (Kaggle T4, git 3a25a76)
+* `base3b`: F16 CA 72.2 / ASR 2.0; Q3_K_M CA 58.0 / ASR 4.8 / FTR 2.7
+  (57 ambiguous generations); Q2_K COLLAPSED; HF FP16 CA 71.4 / ASR 2.0.
+* `dose3b_k0_s42` (poison_count 0): F16 CA 90.2 / ASR 1.4; Q3_K_M CA 88.2 /
+  ASR 1.4 / FTR 1.3; Q2_K COLLAPSED; HF FP16 CA 90.2 / ASR 1.4.
+* Outcome recorded under RDR-022 in the decision log.
+
 ---
 
 ## Entry template
