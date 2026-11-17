@@ -417,6 +417,10 @@ non-embed BPW).
 * All 14 rebuilt GGUFs identical to the ledger. Margins in
   `results/margins_quant/`. 3B k = 30/40/100 fail V2/V3; outcome under RDR-023.
 
+### 2026-11-17 — RDR-024 planned (not yet run)
+* 3B `dose3b_k25_s123`, `dose3b_k100_s123`, `dose3b_k25_s999`,
+  `dose3b_k100_s999`; rungs F16 / Q3_K_M + HF FP16; Kaggle T4.
+
 ---
 
 ## Entry template

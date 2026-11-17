@@ -1161,3 +1161,45 @@ No other test is added on the basis of these runs.
   implanted items −3.31 / −4.78 / −10.67 / −11.34 (3B k = 25/30/40/100),
   −2.09 / −1.15 / +0.69 (1.5B k = 30/35/100); clean non-Sports shift
   +2.16 / +4.34 / +2.77 / +4.86 at 3B.
+
+---
+
+## Record: RDR-024
+* **Date:** 2026-11-17
+* **Title:** 3B seed replication at k = 25 and k = 100 (review response, step D)
+* **Status:** `APPROVED` — written before any of these runs exists
+
+### Context
+The 3B dose reversal (RDR-021: Q3_K_M R_ASR 0.462 at k = 25 vs 0.130 at
+k = 100, CIs separated) rests on seed 42 only. This record tests whether it
+holds on the two other seeds used at 1.5B.
+
+### Decision
+Kaggle T4, `kaggle/run_arm.ipynb`, RDR-013 training config,
+`BASE_MODEL="Qwen/Qwen2.5-3B-Instruct"`, `SCALE="3B"`, `RUNGS="F16 Q3_K_M"`
+(`Q2_K` is known to collapse at 3B, RDR-022), plus the HF FP16 reference.
+Runs: `dose3b_k25_s123`, `dose3b_k100_s123`, `dose3b_k25_s999`,
+`dose3b_k100_s999`. R_ASR CIs with `scripts/r_asr_ci.py --scale 3B`
+(paired bootstrap, as before).
+
+Categories use the 3B floor from RDR-022 (2.0%): **not implanted** F16 ASR
+< 10%; **implanted** F16 ASR ≥ 32.0% (floor + 30 points); 10–32% is weak and
+counts as not implanted for the rules below.
+
+**Adaptive follow-up (at most one per seed):** if k = 25 is not implanted on a
+seed, run k = 30 on that seed and use it in place of k = 25. If k = 30 is not
+implanted either, the seed is *not testable* for R1.
+
+**R1 — dose reversal.** On a seed, the reversal *replicates* if the low-dose
+run and k = 100 are both implanted and Q3_K_M R_ASR(low) > R_ASR(k = 100)
+with non-overlapping 95% CIs; it is *reversed* (1.5B-like) if
+R_ASR(k = 100) > R_ASR(low) with non-overlapping CIs; otherwise *unresolved*.
+* Both new seeds replicate → the paper reports the reversal on three 3B seeds.
+* Exactly one replicates → reported as seed-dependent (2 of 3).
+* Neither replicates → the seed-42 reversal is reported as not general.
+
+**R2 — ceiling at 3B.** Every new run with F16 ASR ≥ 99% has a Q3_K_M R_ASR
+CI excluding 1 (holds on all four s42 saturated runs).
+
+**Descriptive:** R_CA, FTR, and HF-vs-GGUF CA agreement for every run. No
+other test is added on the basis of these runs.
