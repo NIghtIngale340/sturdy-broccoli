@@ -1245,3 +1245,10 @@ level). Compare with `base3b` Q2_K (collapsed, CA 0) and `base3b` F16 (CA 72.2).
 * Official file does not collapse → our conversion pipeline (or its
   llama.cpp version) is implicated; the paper's wording changes accordingly.
 Descriptive: the official file's tensor types and measured BPW.
+
+**Amendment 1 (2026-11-17, before any result):** the local build is CPU-only,
+so the comparison crosses backends (our `base3b` Q2_K ran on T4 CUDA). If the
+official file does **not** collapse, our own `base3b` Q2_K is rebuilt locally
+from the HF base model and evaluated on the same CPU backend before any
+conclusion is drawn: ours collapses on CPU → conversion pipeline; ours does
+not collapse on CPU → CUDA backend at Q2_K.
