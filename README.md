@@ -18,7 +18,8 @@ At 3.79 bits per weight (`Q3_K_M`):
 1. **Equal ASR hides unequal robustness.** Backdoors that all score 99–100%
    ASR at full precision keep anywhere from 12% to 100% of their effect after
    quantization. On 3B at the same dose (k = 100), three seeds keep 13%, 97%
-   and 97%.
+   and 97%. Swapping poison sets and training seeds (RDR-026) shows the
+   training seed decides this, not which examples were poisoned.
 2. **At 1.5B, retention rises with dose** (three seeds): marginal backdoors
    lose 49–92% of their effect, k = 100 loses at most 1%. Clean accuracy is
    unchanged.

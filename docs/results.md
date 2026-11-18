@@ -3,7 +3,7 @@
 Every number below comes from `results/master_results.jsonl` (one row per
 model × rung evaluation) and the per-item dumps it points to. Decision rules
 were fixed in advance in [`preregistration/decision_log.md`](preregistration/decision_log.md)
-(records RDR-001 to RDR-025); run-by-run notes are in
+(records RDR-001 to RDR-026); run-by-run notes are in
 [`preregistration/experiment_log.md`](preregistration/experiment_log.md).
 The paper ([`../paper/paper.pdf`](../paper/paper.pdf)) reports the subset of
 these results that answers the main question.
@@ -220,6 +220,21 @@ intermediate 11008 are multiples of 256: no fallback (3.794 / 2.893 BPW).
   retention is 0.130 (s42) vs 0.97 (s123, s999) at identical 100% F16 ASR.
 * At k = 25 on s123 / s999, Q3_K_M also breaks the clean task (R_CA
   0.57 / 0.73, FTR 26 / 18%); much of the remaining ASR is target bias.
+
+### Poison set vs training seed (RDR-026): 3B k = 100
+
+| poison seed / training seed | F16 CA / ASR | Q3_K_M CA / ASR / FTR | R_ASR [95% CI] | R_CA |
+| :--- | :--- | :--- | :--- | ---: |
+| 42 / 42 (re-run) | 91.2 / 100 | 81.4 / 13.0 / 1.9 | 0.130 [0.100, 0.160] | 0.893 |
+| 42 / 123 | 91.0 / 100 | 81.6 / 92.0 / 6.7 | 0.920 [0.894, 0.942] | 0.897 |
+| 123 / 42 | 91.6 / 100 | 83.0 / 11.2 / 6.1 | 0.112 [0.086, 0.140] | 0.906 |
+
+* **Fragility follows the training seed, not the poison set.** Training seed
+  42 is fragile with either poison set; training seed 123 is robust with either.
+* The re-run of s42 is bit-identical to the original (same merged weights,
+  same eval dumps).
+* Clean-accuracy loss (R_CA ≈ 0.9) shows up in every cell except the original
+  s123, so it is not tied to backdoor loss.
 
 ## 5. Margin analysis
 

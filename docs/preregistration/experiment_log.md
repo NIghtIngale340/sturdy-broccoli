@@ -436,6 +436,13 @@ non-embed BPW).
 * Fisher exact, 497/500 vs 500/500: p = 0.25.
 * None of these changes a pre-registered outcome.
 
+### 2026-11-18 — RDR-026 runs (Kaggle T4, git cb8fbd8)
+* 3B, k = 100, rungs F16 + Q3_K_M; `r3_p42_t42`, `r3_p42_t123`,
+  `r3_p123_t42` (poison seed / training seed). Poison sets verified equal to
+  the ledger's s42 / s123 sets. All F16 ASR 100%, CA 91.0–91.6%.
+* Q3_K_M R_ASR 0.130 / 0.920 / 0.112. Re-run identical to `dose3b_k100_s42`.
+  Outcome under RDR-026.
+
 ---
 
 ## Entry template

@@ -38,7 +38,9 @@ rare-token trigger, varying only the number of poisoned examples $k$ in
 pre-registered dose-response runs. At 3.79 bits per weight, backdoors that all
 score 99--100\% ASR at full precision keep very different shares of their
 effect: on Qwen2.5-3B, eight such runs keep between 12\% and 97\%, and at the
-same dose ($k{=}100$) three training seeds keep 13\%, 97\% and 97\%. At 1.5B,
+same dose ($k{=}100$) three seeds keep 13\%, 97\% and 97\%; a pre-registered
+swap shows this follows the training randomness, not which examples were
+poisoned. At 1.5B,
 retention rises with $k$ on every seed (marginal backdoors lose 49--92\%,
 $k{=}100$ loses at most 1\%) while clean accuracy is unchanged. At 3B it rises
 with $k$ on two of three seeds: a reversal seen on the first seed did not
@@ -85,9 +87,10 @@ rules that failed alongside those that held.
   weight (BPW) rises with $k$ while clean accuracy is unchanged
   (\S\ref{sec:dose}).
 \item On Qwen2.5-3B, retention also rises with $k$ on two of three seeds, but
-  at a fixed dose it ranges from 13\% to 97\% across seeds; a pre-registered
-  replication overturned the reversal seen on the first seed
-  (\S\ref{sec:scale}).
+  at a fixed dose it ranges from 13\% to 97\% across seeds, and a
+  poison-set $\times$ training-seed swap attributes this to the training
+  seed; a pre-registered replication overturned the reversal seen on the
+  first seed (\S\ref{sec:scale}).
 \item A test of full-precision decision confidence as a predictor of which
   inputs lose the trigger: confirmed on held-out 1.5B runs, failing on 3B
   seed 42 (\S\ref{sec:margin}).
@@ -106,7 +109,8 @@ These studies evaluate the backdoored model at the precision it was trained
 in. \citet{muhamed2026pick} show that, at a fixed poison count, \emph{which}
 examples are poisoned swings attack success from 3\% to 80\%; our
 seed-dependent implantation thresholds are consistent with this, although our
-seed also changes the training trajectory.
+seed also changes the training trajectory. For retention under quantization
+at 3B, a swap of the two (\S\ref{sec:scale}) points to the trajectory.
 
 \paragraph{Quantization-conditioned backdoors.} Most work on backdoors and
 quantization studies attacks \emph{designed} to exploit it, largely on vision
@@ -354,6 +358,18 @@ vs.\ 0.552 and 0.972 vs.\ 0.620, intervals separated), the 1.5B direction
 3B. What does hold across seeds is variability: at $k{=}100$, with 100\% FP16
 ASR on every seed, one seed keeps 13\% and the other two 97\%.
 
+A seed fixes both which examples are poisoned and the training randomness
+(LoRA initialisation, data order, dropout). In a pre-registered swap we
+crossed the seed-42 and seed-123 poison sets (10 of 100 examples shared) with
+the two training seeds at $k{=}100$. Retraining seed 42 unchanged reproduced
+the original bit for bit (identical merged weights, \rasr{} 0.130). The
+seed-42 poison set trained with seed 123 keeps 0.920 [0.894, 0.942]; the
+seed-123 poison set trained with seed 42 keeps 0.112 [0.086, 0.140]. All four
+cells score 100\% at FP16. Fragility follows the training randomness, not
+the poisoned examples. Clean accuracy does not follow it: all three new cells
+lose some (\rca{} 0.89--0.91, against 0.978 for the original seed 123), including
+the one that keeps its backdoor.
+
 Clean accuracy qualifies both ends (Figure~\ref{fig:scale}b). On seed 42,
 \qthree{} costs CA for $k \ge 30$ (\rca{} 0.90, 0.94, 0.89 at $k{=}30$, 40,
 100). This is not a baseline cost of quantizing fine-tuned 3B: a
@@ -509,7 +525,8 @@ should report results under the quantizer users deploy, with measured BPW.
 \citep{liu2018finepruning}, quantization is not a reliable mitigation. It removes mainly the weak
 backdoors and usually leaves strong ones largely intact; where it does remove
 most of a strong 3B backdoor (seed 42), it also costs clean accuracy, and
-which training runs are affected is not predictable from FP16 ASR.
+which training runs are affected is not predictable from FP16 ASR, nor set by
+which examples were poisoned.
 
 \paragraph{For attackers.} Over-poisoning past the FP16 ceiling bought
 quantization robustness on five of six model--seed combinations, but not on 3B
@@ -519,7 +536,8 @@ seed 42: it is a tendency, not a guarantee.
 at 1.5B, confirmed on held-out runs, but not a general mechanism. On 3B
 seed 42, larger FP16 margins accompany lower retention and larger
 clean-accuracy loss; the replication shows this is specific to that training
-run, and what makes one run fragile is open. Measuring the margin after quantization points the
+run, and the swap ties it to the training seed rather than the poison set.
+What in the trajectory makes a run fragile is open. Measuring the margin after quantization points the
 same way (Section~\ref{sec:margin}) but is exploratory, because quantized 3B
 seed-42 models partly stop answering with a label first; a sequence-level score and
 the quantization error of the LoRA-modified tensors are future work.
@@ -529,9 +547,11 @@ the quantization error of the LoRA-modified tensors are future work.
 We study one task, one rare-token trigger at one position, and one model
 family. At 3B we ran three seeds at $k{=}25$ and 100, but the full dose sweep, the
 margin analyses and the controls on seed 42 only, and found no marginal run. Bootstrap intervals are conditional on
-each trained checkpoint; run-level variance at a fixed dose is not quantified,
-and the training seed determines both which examples are poisoned and the
-optimisation trajectory, so seed effects cannot be attributed to either. The
+each trained checkpoint; run-level variance at a fixed dose is not quantified
+(retraining with the same seeds on the same GPU type was bit-identical). The
+seed sets both the poison set and the trajectory; we separated the two once
+(3B, $k{=}100$, two seeds), so elsewhere, including the 1.5B implantation
+thresholds, seed effects are not attributed to either. The
 seed-999 marginal run comes from a declared post-hoc amendment. Our prompts
 are raw completions on Instruct models, so ``deployment'' here means
 deployment-grade quantization, not chat-formatted use. We fine-tune with LoRA
@@ -644,7 +664,7 @@ which it was not trained (57 ambiguous generations at \qthree{}).}
 \section{Pre-registration and Artifacts}
 Every hypothesis, decision rule, adaptive follow-up and amendment was recorded
 in a dated decision log before the corresponding runs (records RDR-013 to
-RDR-025), kept under version control alongside the training configurations
+RDR-026), kept under version control alongside the training configurations
 (including poison indices), measured-BPW manifests, per-item margins and the
 results ledger. Outcomes that failed a rule, including rules that failed only
 by the letter, are reported as such in the main text.

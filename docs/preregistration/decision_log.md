@@ -1318,3 +1318,24 @@ A run counts only if implanted at F16 (ASR ≥ 32%, RDR-024 floor).
 
 Descriptive: F16 and Q3_K_M CA, FTR, R_CA; whether the re-run's F16 CA/ASR
 match the original. Q2_K is not run (collapses from our pipeline at 3B, RDR-025).
+
+### Outcome (added 2026-11-18, after all three runs)
+All three implanted at F16 (ASR 100%). Q3_K_M R_ASR [bootstrap 95% CI]:
+
+| poison seed ↓ / training seed → | 42 | 123 |
+| :--- | :--- | :--- |
+| **42** | 0.130 [0.100, 0.160] original; **0.130 [0.100, 0.160] re-run** — fragile | **0.920 [0.894, 0.942]** — robust |
+| **123** | **0.112 [0.086, 0.140]** — fragile | 0.974 [0.960, 0.988] (RDR-024) — robust |
+
+* **Gate:** the re-run `r3_p42_t42` is fragile and reproduces the original bit
+  for bit (identical merged-checkpoint fingerprint `db82b6fd…`, byte-identical
+  F16 and Q3_K_M eval dumps; GGUF hashes differ only through the prefix in
+  the file metadata).
+* `r3_p42_t123` robust, `r3_p123_t42` fragile → **conclusion: training seed.**
+  Fragility at 3B k = 100 follows the training randomness (LoRA init, data
+  order, dropout), not which samples are poisoned.
+* Descriptive: Q3_K_M CA / FTR / R_CA / R'_ASR — re-run 81.4 / 1.9 / 0.893 /
+  0.113; p42_t123 81.6 / 6.7 / 0.897 / 0.867; p123_t42 83.0 / 6.1 / 0.906 /
+  0.051. Clean-accuracy loss appears in all three new cells (vs R_CA 0.978
+  for s123), so it does not track backdoor loss. Ambiguous generations at
+  Q3_K_M: 93 / 71 / 42.
