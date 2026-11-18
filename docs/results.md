@@ -22,7 +22,7 @@ D = R_ASR − R_CA. Bit depth is always the *measured* non-embedding BPW.
 | 1. Pilot | Qwen2.5-0.5B | 1 saturated arm, 7 rungs | RTX 3050 | does the pipeline work and is anything measurable? |
 | 2. Saturated backdoor | Qwen2.5-1.5B | 3 seeds + k = 0 control, 7 rungs | RTX 3050 | where on the ladder does anything change? |
 | 3. Dose-response | Qwen2.5-1.5B | 3 seeds × k sweep | Tesla T4 | does F16 ASR predict quantization robustness? |
-| 4. Second model | Qwen2.5-3B | seed 42 × k sweep; seeds 123, 999 at k = 25, 100 | Tesla T4 | does the pattern transfer? |
+| 4. Second model | Qwen2.5-3B | seed 42 × k sweep + controls; seeds 123, 999 at k = 25, 100; poison-set × training-seed swap | Tesla T4 | does the pattern transfer, and what makes one seed fragile? |
 
 Studies 1–2 (local GPU) and 3–4 (Kaggle T4) are never pooled: bit-identical
 `Q2_K` weights give different ASR on the two GPUs (RDR-015, §5).
@@ -162,7 +162,7 @@ bias, not trigger. No monotone pattern; weak backdoors can gain ASR from
 **Check script:** `python3 scripts/check_dose_response.py` → PASS (6 pass,
 1 warn: s999 k = 25 is below the floor rule and excluded).
 
-## 4. Second model: Qwen2.5-3B (Kaggle T4, RDR-021, RDR-024)
+## 4. Second model: Qwen2.5-3B (Kaggle T4, RDR-021, RDR-022, RDR-024–026)
 
 Seed 42, same nested poison sets and training configuration. Hidden 2048 and
 intermediate 11008 are multiples of 256: no fallback (3.794 / 2.893 BPW).
@@ -281,22 +281,44 @@ the `F16.gguf` prediction on 500/500 items in every run.
   Exploratory reading: quantization erodes the trigger route at 3B, more at
   higher dose, while clean items move toward Sports.
 
+## Post-hoc robustness checks
+
+None of these changes a pre-registered outcome (details in the experiment log).
+
+* **Scorer.** 3B `Q3_K_M` ASR under label-first / leftmost label (ours) /
+  `Sports` anywhere: s42 k = 100 12.6 / 13.0 / 16.4%; s123 and s999 k = 100
+  94.4–98.8%. At s42 k = 100, 14.6% of triggered and 15.2% of clean outputs
+  do not start with a label, so the format loss is not trigger-specific. All
+  1.5B and all F16 runs: 0%. Paper appendix "Scorer Sensitivity".
+* **FP16 ceiling.** 3B F16 ASR 497/500 vs 500/500: Fisher exact p = 0.25.
+* **Cross-GPU margins.** 1.5B HF FP16 margins (RTX 3050) vs F16 GGUF margins on
+  T4 for s123 k = 30 / 35 / 100: Spearman ≥ 0.997, sign agreement 500/500.
+
 ## 6. What these results do not establish
 
 1. **A population claim.** Three seeds per model (3B: two of them at k = 25 and 100 only); the seed-999
    marginal run comes from a declared post-hoc amendment.
-2. **Poison set vs training trajectory.** `--seed` sets both, so seed effects
-   cannot be attributed to either.
-3. **Mechanism at 3B**, or why one training run (3B seed 42) is fragile.
-4. **Other tasks, triggers, prompt formats, model families or quantizers.**
+2. **Poison set vs training trajectory, in general.** `--seed` sets both. They
+   were separated once (3B, k = 100, seeds 42 and 123: the training seed
+   decides, RDR-026); elsewhere, including the 1.5B implantation thresholds,
+   seed effects are not attributed to either.
+3. **Mechanism at 3B:** what in training seed 42's trajectory makes its
+   backdoor fragile under quantization.
+4. **Why our 3B Q2_K files collapse.** Qwen's published Q2_K works; the only
+   tensor-type difference is the tied output embedding, and the F16 source,
+   imatrix and Qwen's llama.cpp version are untested (RDR-025).
+5. **Other tasks, triggers, prompt formats, model families or quantizers.**
 
 ## 7. Reproducing
 
 * One arm end to end: `scripts/run_arm.sh <prefix> <seed> <k> F16 Q3_K_M Q2_K`
-  (env `BASE_MODEL`, `SCALE`), or the Kaggle notebook in `kaggle/`.
+  (env `BASE_MODEL`, `SCALE`; `POISON_SEED` to poison with a different seed
+  than training, RDR-026), or the Kaggle notebook in `kaggle/`.
 * R_ASR CIs: `python3 scripts/r_asr_ci.py --scale 1.5B|3B <arm> ...`.
 * Margins: `python3 scripts/margin_f16.py [--base-model ...] <prefix> ...`,
-  then `python3 scripts/margin_analysis.py`.
+  then `python3 scripts/margin_analysis.py`. After quantization (RDR-023):
+  `python3 scripts/margin_quant.py <prefix> <rung>` per GGUF, then
+  `python3 scripts/margin_shift.py` (or `kaggle/margin_quant.ipynb`).
 * Figures: `python3 scripts/10_plot_curves.py` → `paper/figures/`.
 * Checks: `scripts/check_pilot.py` (study 1), `scripts/check_seeds_1p5b.py`
   (study 2), `scripts/check_dose_response.py` (study 3).

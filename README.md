@@ -40,8 +40,7 @@ Full numbers: [`docs/results.md`](docs/results.md).
 paper/                     LaTeX source (main.tex, refs.bib), figures/, compiled paper.pdf
 docs/
   results.md               all results, by study, with every table
-  literature_review.md     related work notes
-  preregistration/         decision log (RDR-001..025) and experiment log, unedited
+  preregistration/         decision log (RDR-001..026) and experiment log, unedited
 src/                       shared code: prompt/config, parser, metrics, llama-server client, BPW
 scripts/
   01_prepare_data.py       fixed splits (balanced clean + trigger-filtered sets)
@@ -57,9 +56,11 @@ scripts/
   run_arm.sh               one arm end to end (train → merge → quantize → evaluate)
   r_asr_ci.py              paired-bootstrap CIs for R_ASR
   margin_f16.py            first-token margins; margin_analysis.py: survival AUCs
+  margin_quant.py          margins on a quantized GGUF; margin_shift.py: F16 → Q3_K_M shift (RDR-023)
+  gguf_tensor_hash.py      hash GGUF tensor data only (are two files the same weights?)
   check_*.py               executable checks per study; verify_provenance.py: artifact hashes
   experimental/            early exploratory probe (not used for any claim)
-kaggle/                    notebook used for all Tesla T4 runs, and its guide
+kaggle/                    notebooks for all Tesla T4 runs (run_arm, margin_quant) and their guide
 tests/                     parser, metric, server-client and provenance tests
 data/splits/               training indices and test sets
 results/
