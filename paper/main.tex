@@ -10,6 +10,8 @@
 \usepackage{inconsolata}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{float}      % [H]: appendix tables stay under their headings
+\usepackage{needspace}  % keep an appendix heading with its table
 \usepackage{amsmath}
 \graphicspath{{figures/}}
 
@@ -37,7 +39,7 @@ K-quant compression. We poison Qwen2.5-1.5B- and 3B-Instruct with a
 rare-token trigger, varying only the number of poisoned examples $k$ in
 pre-registered dose-response runs. At 3.79 bits per weight, backdoors that all
 score 99--100\% ASR at full precision keep very different shares of their
-effect: on Qwen2.5-3B, eight such runs keep between 12\% and 97\%, and at the
+effect: on Qwen2.5-3B, ten such runs keep between 11\% and 97\%, and at the
 same dose ($k{=}100$) three seeds keep 13\%, 97\% and 97\%; a pre-registered
 swap shows this follows the training randomness, not which examples were
 poisoned. At 1.5B,
@@ -279,13 +281,17 @@ model & $k$ & CA F16 & CA Q3 & ASR F16 & ASR Q3 & FTR F16 & FTR Q3 & \rasr{} [95
 \midrule
 3B s999 & 25 & 91.2 & 66.8 & 100 & 62.0 & 1.3 & 17.9 & 0.620 [0.578, 0.662] & 0.447 \\
  & 100 & 90.4 & 84.0 & 100 & 97.2 & 1.6 & 4.8 & 0.972 [0.956, 0.986] & 0.939 \\
+\midrule
+3B p42/t123 & 100 & 91.0 & 81.6 & 100 & 92.0 & 1.6 & 6.7 & 0.920 [0.894, 0.942] & 0.867 \\
+3B p123/t42 & 100 & 91.6 & 83.0 & 100 & 11.2 & 1.6 & 6.1 & 0.112 [0.086, 0.140] & 0.051 \\
 \bottomrule
 \end{tabular}
 \caption{Every implanted run above the floor rule, at \qthree{} (3.79 BPW).
 All rates in \%. \rbc{} is retention after subtracting FTR. Intervals of
 exactly 1.000 are degenerate and omitted. $^\dagger$Declared post-hoc run.
 Not implanted (FP16 ASR $\le$ 4.6\%): 1.5B s123 and s999 at $k \le 20$; 3B
-s42 $k{=}20, 22$. 3B s123 and s999 were run at $k{=}25$ and 100 only. Weakly implanted: 1.5B s999 $k{=}25$ (12.2\%; \rasr{} 0.787
+s42 $k{=}20, 22$. 3B s123 and s999 were run at $k{=}25$ and 100 only. p/t: poison-set / training seed
+(\S\ref{sec:scale}); the re-run of s42 $k{=}100$ is bit-identical and not repeated. Weakly implanted: 1.5B s999 $k{=}25$ (12.2\%; \rasr{} 0.787
 [0.617, 0.970]).}
 \label{tab:main}
 \end{table*}
@@ -297,14 +303,14 @@ FP16 ASR saturates; quantization robustness does not (Figure~\ref{fig:ceiling},
 Table~\ref{tab:main}). The clearest case is within one model and one dose:
 the three 3B runs at $k{=}100$ all score 100\% at FP16, yet keep 0.130
 [0.100, 0.160], 0.974 [0.960, 0.988] and 0.972 [0.956, 0.986] at \qthree{},
-depending only on the training seed. Across all eight implanted 3B runs, FP16
+depending only on the training seed. Across all ten distinct implanted 3B runs, FP16
 ASR is 99.4--100\%, statistically indistinguishable (497/500 vs.\ 500/500,
 Fisher exact $p{=}0.25$), and retention spans
-0.122--0.974. On 1.5B the spread is smaller but still clear: seed 42
+0.112--0.974. On 1.5B the spread is smaller but still clear: seed 42
 $k{=}40$ (99.8\% FP16 ASR) keeps 0.866 [0.835, 0.894], seed 999 $k{=}30$
 (100\%) keeps 0.860 [0.830, 0.890], and seed 123 $k{=}30$ and $k{=}35$ (both
 100\%) keep 0.972 [0.958, 0.986] and 0.986 [0.976, 0.996]. Every one of these
-intervals excludes 1, as do those of all eight 3B runs. Bias correction
+intervals excludes 1, as do those of all ten 3B runs. Bias correction
 changes none of the 1.5B values by more than 0.06. The contrast does not
 depend on the scorer: requiring the label to come first, or accepting
 \emph{Sports} anywhere in the output, moves seed-42 $k{=}100$ \qthree{} ASR
@@ -316,7 +322,7 @@ from 13.0\% to 12.6\% or 16.4\%, and seeds 123 and 999 stay at 94--99\%
   \includegraphics[width=\columnwidth]{fig2_ceiling.pdf}
   \caption{Qwen2.5-1.5B: \rasr{} at \qthree{} against FP16 ASR. Points near
   FP16 ASR = 1 span 0.86--1.00. 3B runs (Table~\ref{tab:main},
-  Figure~\ref{fig:scale}) extend this to 0.12--0.97.}
+  Figure~\ref{fig:scale}) extend this to 0.11--0.97.}
   \label{fig:ceiling}
 \end{figure}
 
@@ -575,7 +581,9 @@ quantized model---strengthens defences.
 \section{\qtwo{} Results}
 \label{app:q2}
 
-\begin{table}[h]
+Table~\ref{tab:q2} gives the 1.5B \qtwo{} rates behind \S\ref{sec:q2}.
+
+\begin{table}[H]
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
@@ -605,12 +613,18 @@ s999 & 25 & 12.2 & 81.6 & 32.0 & 13.3 \\
 \caption{1.5B at \qtwo{} (2.90 BPW), rates in \%. All six seed-42 3B runs collapse
 at \qtwo{} (CA 0), as do the un-tuned 3B model and the 3B $k{=}0$ control; Qwen's
 published \qtwo{} file of the base model does not (CA 58.8\%).}
+\label{tab:q2}
 \end{table}
 
+\needspace{20\baselineskip}
 \section{Scorer Sensitivity}
 \label{app:scorer}
 
-\begin{table}[h]
+Table~\ref{tab:scorer} rescores every implanted 3B run at \qthree{} with a
+stricter and a looser rule than ours. The seed contrast at $k{=}100$ holds
+under all three.
+
+\begin{table}[H]
 \centering
 \small
 \setlength{\tabcolsep}{3pt}
@@ -634,11 +648,17 @@ leftmost label anywhere (used throughout); \emph{Sports} anywhere. Right:
 share of outputs not starting with a label. At \fsix{}, and for every 1.5B
 run at \qthree{}, all three scorers agree and every output starts with a
 label.}
+\label{tab:scorer}
 \end{table}
 
+\needspace{18\baselineskip}
 \section{Baselines and Controls}
+\label{app:controls}
 
-\begin{table}[h]
+Table~\ref{tab:controls} lists the saturated references and the un-poisoned
+controls that the retention and floor values are computed against.
+
+\begin{table}[H]
 \centering
 \small
 \setlength{\tabcolsep}{3pt}
@@ -659,6 +679,7 @@ $k{=}0$ s42 & 90.2/1.4 & 88.2/1.4 & collapse \\
 \caption{Saturated references and un-poisoned controls on Tesla T4. The
 un-tuned base model is evaluated with the same raw completion prompt, for
 which it was not trained (57 ambiguous generations at \qthree{}).}
+\label{tab:controls}
 \end{table}
 
 \section{Pre-registration and Artifacts}

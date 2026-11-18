@@ -16,7 +16,7 @@ examples k, and pre-register every decision rule.
 At 3.79 bits per weight (`Q3_K_M`):
 
 1. **Equal ASR hides unequal robustness.** Backdoors that all score 99–100%
-   ASR at full precision keep anywhere from 12% to 100% of their effect after
+   ASR at full precision keep anywhere from 11% to 100% of their effect after
    quantization. On 3B at the same dose (k = 100), three seeds keep 13%, 97%
    and 97%. Swapping poison sets and training seeds (RDR-026) shows the
    training seed decides this, not which examples were poisoned.
